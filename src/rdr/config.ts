@@ -1,4 +1,4 @@
-export const VERSION = '0.1.0';
+export const VERSION = '0.1';
 
 export const IS_DEV = process.env.NODE_ENV !== 'production';
 

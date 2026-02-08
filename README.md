@@ -1,17 +1,16 @@
 # CosmicEye
 
-**RDR (RUM Duplicate Requests)** — lightweight library that detects and logs duplicate API requests in single-page applications.
+Набор RUM-метрик для SPA. Два независимых модуля:
 
-## What it does
+- **RDR** (RUM Duplicate Requests) — детект и логирование дублирующихся API-запросов.
+- **RT** (Route Transition Metrics) — измерение времени переходов между маршрутами (render + TTI).
 
-CosmicEye intercepts API request payloads and detects when the same request (identical service, method, params, body) is fired multiple times within a configurable time window (default: 1 000 ms). When a duplicate is detected, a structured log entry is created with timing data, user action context, and environment info.
+**Ключевые свойства:**
 
-**Key properties:**
-
-- Params and body are **never stored raw** — only FNV-1a hashes are recorded
-- Deterministic sampling: ~5% of production users (always enabled in development)
-- Logs are batched and flushed on interval, threshold, or page lifecycle events
-- Zero external runtime dependencies
+- Нуль runtime-зависимостей для ядра (React — optional peer для расширений)
+- RDR: детерминированный семплинг ~5% в production, всегда включен в dev
+- RT: dev-only, измеряет `route_render_ms` и `route_tti_ms`
+- `RouteTracker` — «глупый» React-провайдер для обоих модулей
 
 ## Installation
 
@@ -21,15 +20,38 @@ npm install cosmic-eye
 
 ## Quick start
 
+### RDR
+
 ```ts
 import rdr, { initRDR } from 'cosmic-eye';
 
-// 1. Initialize once at app startup
 initRDR();
-
-// 2. Feed every API request payload into reqHandler
-//    (integrate at the point where your app dispatches requests)
 rdr.reqHandler({ s: 'UserService', m: 'getProfile', p: { id: 42 }, b: {} });
+```
+
+### RT + RouteTracker
+
+```ts
+import { initRT, patchHistory, rt } from 'cosmic-eye';
+import { RouteTracker } from 'cosmic-eye/react';
+import { createBrowserHistory } from 'history';
+
+const history = createBrowserHistory();
+initRT();
+patchHistory(history);
+```
+
+```tsx
+<Router history={history}>
+  <RouteTracker
+    onRouteChange={[
+      () => { rdr.resetTiming(); rdr.resetActions(); },
+      (pathname) => { rt.markRendered(pathname); },
+    ]}
+  >
+    <Switch>...</Switch>
+  </RouteTracker>
+</Router>
 ```
 
 ## How duplicate detection works
@@ -49,93 +71,81 @@ In **production** (`NODE_ENV=production`), only ~5% of users are sampled. The de
 
 In **development** (`NODE_ENV !== 'production'`), sampling is always enabled.
 
-## What gets logged
-
-Each log entry contains:
-
-| Field | Description |
-|-------|-------------|
-| `ver` | Library version |
-| `endpoint` | `service.method` |
-| `reqHash` | `req_{endpointHash}_{paramsHash}_{bodyHash}_{truncationMask}` |
-| `deltaMs` | Time between duplicate requests (ms) |
-| `timings.timeSincePageLoadMs` | Time since init/reset |
-| `timings.timeSinceLastActionMs` | Time since last user action (or `null`) |
-| `lastAction` | `{ type, rum_id? }` — last user interaction |
-| `env` | `{ visibility, net }` — tab state and connection info |
-
-See [docs/EVENT_SCHEMA.md](docs/EVENT_SCHEMA.md) for the full schema.
-
-## Data safety
-
-- **No PII**: params and body are hashed (FNV-1a), never stored or transmitted raw
-- **No cookies/tokens**: only `localStorage` key for sampling client ID
-- Truncation flags indicate when data exceeded hash limits
-
 ## API
 
-### `initRDR()`
+### RDR
 
-Initialize the RDR instance. Safe to call multiple times (no-op after first init). Must be called before `reqHandler` will process anything.
+| Функция | Описание |
+|---------|----------|
+| `initRDR()` | Инициализация. Безопасно вызывать многократно. |
+| `rdr.reqHandler(payload)` | Передать API-запрос. `{ s, m, p?, b? }` |
+| `rdr.resetTiming()` | Сброс таймера (SPA route change) |
+| `rdr.resetActions()` | Очистка буфера действий |
+| `rdr.destroy()` | Остановить таймеры, flush, очистить |
 
-### `rdr.reqHandler(payload)`
+### RT
 
-Feed an API request payload. Expected shape: `{ s: string, m: string, p?: unknown, b?: unknown }`.
+| Функция | Описание |
+|---------|----------|
+| `initRT()` | Включить модуль (dev-only) |
+| `patchHistory(history)` | Патч history для авто-отслеживания навигаций |
+| `rt.markRendered(pathname)` | Отметить рендер маршрута |
+| `trackCritical(promise?)` | Отслеживать критическую async-операцию |
+| `rt.destroy()` | Очистка |
 
-### `rdr.resetTiming()`
+### RouteTracker (`cosmic-eye/react`)
 
-Reset the page-load timer (call on SPA route changes).
+| Prop | Тип | Описание |
+|------|-----|----------|
+| `children` | `ReactNode` | Дочерние элементы |
+| `onRouteChange` | `Array<(pathname, search) => void>` | Колбэки на смену маршрута |
 
-### `rdr.resetActions()`
-
-Clear the user actions buffer.
-
-### `rdr.destroy()`
-
-Stop all timers, flush remaining logs, remove event listeners, clean up state.
+See [docs/rdr/EVENT_SCHEMA.md](docs/rdr/EVENT_SCHEMA.md) and [docs/rt/EVENT_SCHEMA.md](docs/rt/EVENT_SCHEMA.md) for log schemas.
 
 ## Структура проекта
 
 ```
 src/
-  index.ts              — публичный API (только реэкспорты)
-  rdr/                  — ядро: детект дубликатов запросов
-    index.ts            — RDR-класс, initRDR, экспорты
-    config.ts           — константы конфигурации
-    hash.ts             — FNV-1a хеширование
-    sampling.ts         — детерминированное семплирование
-    actions.ts          — отслеживание действий пользователя
-    env.ts              — снимок окружения
-    utils.ts            — утилиты (time, extension)
-    types.ts            — TypeScript-типы
-  extensions/           — будущие расширения (пока пусто)
+  index.ts              — публичный API (только реэкспорты, без React)
+  react.ts              — точка входа React-расширений (cosmic-eye/react)
+  rdr/                  — модуль RDR: детект дубликатов запросов
+  rt/                   — модуль RT: метрики переходов между маршрутами
+  extensions/
+    route-tracker/      — RouteTracker React-компонент
 tests/
-  rdr/                  — тесты ядра RDR
-  extensions/           — тесты расширений
+  rdr/                  — тесты RDR (49)
+  rt/                   — тесты RT (19)
+  extensions/           — тесты расширений (6)
 docs/
+  rdr/                  — CONFIG, EVENT_SCHEMA, INTEGRATION для RDR
+  rt/                   — CONFIG, EVENT_SCHEMA, INTEGRATION для RT
   checklists/           — чек-листы обновлений и релизов
   best-practices/       — политики: SemVer, тесты, документация
   agent/                — инструкции для AI-агента
-```
 
 ## Команды тестов
 
 | Команда | Область |
-|---------|---------|
+|---------|--------|
 | `npm run test` | все тесты |
 | `npm run test:rdr` | только RDR |
+| `npm run test:rt` | только RT |
 | `npm run test:extensions` | только extensions |
 | `npm run test:watch` | все, watch-режим |
 
-## Конфигурация
-
-Все константы в `src/rdr/config.ts`. См. [docs/CONFIG.md](docs/CONFIG.md).
-
 ## Документация
 
-- [EVENT_SCHEMA.md](docs/EVENT_SCHEMA.md) — схема LogEntry
-- [CONFIG.md](docs/CONFIG.md) — справочник конфигурации
-- [INTEGRATION.md](docs/INTEGRATION.md) — руководство по интеграции
+### RDR
+- [docs/rdr/CONFIG.md](docs/rdr/CONFIG.md) — справочник конфигурации
+- [docs/rdr/EVENT_SCHEMA.md](docs/rdr/EVENT_SCHEMA.md) — схема LogEntry
+- [docs/rdr/INTEGRATION.md](docs/rdr/INTEGRATION.md) — руководство по интеграции
+
+### RT
+- [docs/rt/CONFIG.md](docs/rt/CONFIG.md) — справочник конфигурации
+- [docs/rt/EVENT_SCHEMA.md](docs/rt/EVENT_SCHEMA.md) — схема RTLogEntry
+- [docs/rt/INTEGRATION.md](docs/rt/INTEGRATION.md) — руководство по интеграции
+
+### Общее
 - [CHANGELOG.md](CHANGELOG.md) — история изменений
 
 ## License

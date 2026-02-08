@@ -1,7 +1,11 @@
 // Public API — re-exports only, no logic or side-effects
+// NOTE: React extensions are in a separate entry point 'cosmic-eye/react'
 
-export { initRDR, hashText, makeRequestKey, VERSION } from './rdr';
+// === RDR ===
+export { initRDR, hashText, makeRequestKey } from './rdr';
 export { default } from './rdr';
+export { default as rdr } from './rdr';
+export { VERSION as RDR_VERSION } from './rdr';
 
 export type {
   ApiRequestPayload,
@@ -13,3 +17,15 @@ export type {
   ActionSnapshot,
   EnvSnapshot,
 } from './rdr';
+
+// === RT ===
+export { initRT, patchHistory, trackCritical } from './rt';
+export { default as rt } from './rt';
+export { VERSION as RT_VERSION } from './rt';
+
+export type {
+  Transition,
+  RTLogEntry,
+  HistoryLike,
+  HistoryLocation,
+} from './rt';

@@ -14,9 +14,11 @@ npm run build         # сборка dist/
 ## 2. SemVer bump
 
 - Определите тип изменения: `patch` / `minor` / `major` (см. `docs/best-practices/SEMVER_POLICY.md`).
-- Обновите версию в **двух** местах:
-  - `package.json` → поле `"version"`
-  - `src/rdr/config.ts` → константа `VERSION`
+- Обновите версию **пакета**: `package.json` → поле `"version"`.
+- Если изменился формат логов модуля, обновите **версию схемы**: `src/<module>/config.ts` → `VERSION` (формат `MAJOR.MINOR`).
+  - `src/rdr/config.ts` — для RDR LogEntry.
+  - `src/rt/config.ts` — для RT RTLogEntry.
+- Версия пакета и версии схем логов **независимы**.
 - **Обязательно** укажите причину bump в коммите и CHANGELOG.
 
 ## 3. Документация

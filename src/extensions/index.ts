@@ -1,4 +1,4 @@
-// Extensions barrel — future extensions will be re-exported here
-// Currently empty; structure is ready for additions
+// Extensions barrel — re-exports all extension modules
 
-export {};
+export { RouteTracker } from './route-tracker';
+export type { RouteTrackerProps, RouteChangeListener } from './route-tracker';

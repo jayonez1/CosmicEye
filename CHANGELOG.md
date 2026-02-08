@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- **[rt]** Новый модуль RT (Route Transition Metrics) — измерение времени переходов между маршрутами в SPA.
+- **[rt]** `initRT()`, `patchHistory(history)`, `trackCritical(promise?)` — публичный API модуля RT.
+- **[rt]** Поддержка history v4 и v5 в `patchHistory`.
+- **[extensions]** `RouteTracker` — «глупый» React-компонент для отслеживания смены маршрутов. Вызывает массив колбэков `onRouteChange` при смене `pathname`.
+- **[extensions]** Отдельная точка входа `cosmic-eye/react` для React-расширений (не требует React для основного импорта).
+- Именованные экспорты `rdr` и `rt` из корневого модуля.
+- `RDR_VERSION` и `RT_VERSION` экспорты (версии схем логов).
+- npm-скрипты: `test:rt`, `test:watch:rt`.
+- Документация: `docs/rdr/`, `docs/rt/`, `docs/extensions/`.
+
+### Changed
+
+- **[rdr]** `VERSION` изменён на формат `MAJOR.MINOR` (`'0.1'`). Это версия схемы логов, **не** версия пакета.
+- **[rdr]** Удалён экспорт `VERSION` — заменён на `RDR_VERSION`.
+- Документация каждого модуля перенесена в отдельные директории: `docs/rdr/`, `docs/rt/`.
+- `package.json`: версия пакета `0.2.0`, добавлены `peerDependencies` (react, react-dom, react-router-dom — optional).
+- `tsup.config.ts`: два entry point (`index.ts`, `react.ts`).
+- `tsconfig.json`: добавлена поддержка JSX (`react-jsx`).
+
+### Fixed
+
+- **[rt]** Исправлен баг falsy-zero: `renderedAt` и `interactiveAt` корректно обрабатываются при значении `0` (использование `!== null` вместо truthy-проверки).
+
 ## 0.1.0
 
 Initial release.

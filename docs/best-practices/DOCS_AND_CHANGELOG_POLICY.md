@@ -44,6 +44,14 @@
 
 ```
 docs/
+  rdr/                        # документация модуля RDR
+    CONFIG.md                 # справочник конфигурации RDR
+    EVENT_SCHEMA.md           # схема LogEntry
+    INTEGRATION.md            # руководство по интеграции RDR
+  rt/                         # документация модуля RT
+    CONFIG.md                 # справочник конфигурации RT
+    EVENT_SCHEMA.md           # схема RTLogEntry
+    INTEGRATION.md            # руководство по интеграции RT
   checklists/
     UPDATE_CHECKLIST.md       # после каждого обновления
     RELEASE_CHECKLIST.md      # процесс релиза в npm
@@ -54,10 +62,9 @@ docs/
   agent/
     HOW_TO_GIVE_TASKS.md      # как давать задачи модели
     UPDATE_KNOWLEDGE_PROTOCOL.md  # протокол обновления документации
-  CONFIG.md                   # справочник конфигурации
-  EVENT_SCHEMA.md             # схема LogEntry
-  INTEGRATION.md              # руководство по интеграции
 ```
+
+Каждый модуль (`rdr`, `rt`, будущие) имеет **свою** директорию в `docs/`.
 
 ## README.md
 

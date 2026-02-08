@@ -27,9 +27,12 @@ UPDATE_GUIDES
 | `docs/best-practices/TESTING_POLICY.md` | Если изменились правила тестирования или структура тестов |
 | `docs/best-practices/DOCS_AND_CHANGELOG_POLICY.md` | Если изменилась структура docs |
 | `docs/agent/HOW_TO_GIVE_TASKS.md` | Если появились новые правила или ограничения |
-| `docs/CONFIG.md` | Если изменились конфигурационные константы |
-| `docs/EVENT_SCHEMA.md` | Если изменилась структура LogEntry |
-| `docs/INTEGRATION.md` | Если изменился процесс интеграции или API |
+| `docs/rdr/CONFIG.md` | Если изменились конфигурационные константы RDR |
+| `docs/rdr/EVENT_SCHEMA.md` | Если изменилась структура LogEntry (RDR) |
+| `docs/rdr/INTEGRATION.md` | Если изменился процесс интеграции RDR |
+| `docs/rt/CONFIG.md` | Если изменились конфигурационные константы RT |
+| `docs/rt/EVENT_SCHEMA.md` | Если изменилась структура RTLogEntry |
+| `docs/rt/INTEGRATION.md` | Если изменился процесс интеграции RT |
 | `README.md` | Если изменились API, структура проекта или команды |
 
 ### 3. Отчёт
