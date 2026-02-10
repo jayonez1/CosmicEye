@@ -29,23 +29,31 @@ initRDR();
 rdr.reqHandler({ s: 'UserService', m: 'getProfile', p: { id: 42 }, b: {} });
 ```
 
-### RT + RouteTracker
+### RT + observeHistory + RouteTracker
 
 ```ts
-import { initRT, patchHistory, rt } from 'cosmic-eye';
-import { RouteTracker } from 'cosmic-eye/react';
+import { initRT, rt, observeHistory } from 'cosmic-eye';
 import { createBrowserHistory } from 'history';
 
 const history = createBrowserHistory();
 initRT();
-patchHistory(history);
+
+// Pre-render: observer эмитит события навигации до React-рендера
+const observer = observeHistory(history);
+observer.subscribe(({ pathname, search }) => {
+  rt.startTransition(pathname, search);
+  rdr.resetTiming();
+  rdr.resetActions();
+});
 ```
 
 ```tsx
+import { RouteTracker } from 'cosmic-eye/react';
+
+// Post-render: RouteTracker вызывается после React commit
 <Router history={history}>
   <RouteTracker
     onRouteChange={[
-      () => { rdr.resetTiming(); rdr.resetActions(); },
       (pathname) => { rt.markRendered(pathname); },
     ]}
   >
@@ -88,10 +96,18 @@ In **development** (`NODE_ENV !== 'production'`), sampling is always enabled.
 | Функция | Описание |
 |---------|----------|
 | `initRT()` | Включить модуль (dev-only) |
-| `patchHistory(history)` | Патч history для авто-отслеживания навигаций |
-| `rt.markRendered(pathname)` | Отметить рендер маршрута |
+| `rt.startTransition(pathname, search)` | Начать отсчёт перехода (pre-render) |
+| `rt.markRendered(pathname)` | Отметить рендер маршрута (post-render) |
 | `trackCritical(promise?)` | Отслеживать критическую async-операцию |
 | `rt.destroy()` | Очистка |
+
+### observeHistory
+
+| Функция | Описание |
+|---------|----------|
+| `observeHistory(history)` | Создать observer (idempotent через WeakMap) |
+| `observer.subscribe(listener)` | Подписка на `INIT/PUSH/REPLACE/POP`. Возвращает `unsubscribe` |
+| `observer.unpatch()` | Снять патч, очистить |
 
 ### RouteTracker (`cosmic-eye/react`)
 
@@ -111,11 +127,12 @@ src/
   rdr/                  — модуль RDR: детект дубликатов запросов
   rt/                   — модуль RT: метрики переходов между маршрутами
   extensions/
-    route-tracker/      — RouteTracker React-компонент
+    history-route-observer/ — observer навигации (pre-render)
+    route-tracker/      — RouteTracker React-компонент (post-render)
 tests/
   rdr/                  — тесты RDR (49)
   rt/                   — тесты RT (19)
-  extensions/           — тесты расширений (6)
+  extensions/           — тесты расширений (32)
 docs/
   rdr/                  — CONFIG, EVENT_SCHEMA, INTEGRATION для RDR
   rt/                   — CONFIG, EVENT_SCHEMA, INTEGRATION для RT

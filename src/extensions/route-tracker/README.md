@@ -1,11 +1,13 @@
 # RouteTracker
 
-React-компонент для отслеживания смены маршрутов в SPA.
+React-компонент для **post-render** отслеживания смены маршрутов в SPA.
 
 ## Назначение
 
 `RouteTracker` — «глупый» провайдер. Он **не знает** о RDR, RT или других модулях.
-Его единственная задача: обнаружить смену `pathname` через `useLocation()` и вызвать зарегистрированные колбэки.
+Его единственная задача: обнаружить смену `pathname` через `useLocation()` и вызвать зарегистрированные колбэки **после** React commit.
+
+> **Pre-render** события навигации (до рендера) обрабатываются через `observeHistory` — отдельный extension. RouteTracker предназначен для **post-render** колбэков, таких как `rt.markRendered()`.
 
 ## API
 
@@ -35,13 +37,12 @@ import { RouteTracker } from 'cosmic-eye/react';
 ## Пример интеграции
 
 ```tsx
-import rdr, { rt } from 'cosmic-eye';
+import { rt } from 'cosmic-eye';
 import { RouteTracker } from 'cosmic-eye/react';
 
 <Router history={history}>
   <RouteTracker
     onRouteChange={[
-      () => { rdr.resetTiming(); rdr.resetActions(); },
       (pathname) => { rt.markRendered(pathname); },
     ]}
   >
@@ -51,6 +52,17 @@ import { RouteTracker } from 'cosmic-eye/react';
   </RouteTracker>
 </Router>
 ```
+
+> **Для pre-render reset** (RDR `resetTiming`, RT `startTransition`) используйте `observeHistory`:
+> ```ts
+> import { observeHistory, rt } from 'cosmic-eye';
+> const observer = observeHistory(history);
+> observer.subscribe(({ pathname, search }) => {
+>   rt.startTransition(pathname, search);
+>   rdr.resetTiming();
+>   rdr.resetActions();
+> });
+> ```
 
 ## Требования
 

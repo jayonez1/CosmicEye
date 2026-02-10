@@ -1,6 +1,6 @@
 import { VERSION, IS_DEV, CRITICAL_TIMEOUT_MS, IDLE_TIMEOUT_MS, RAF_COUNT, EVENT_NAME } from './config';
 import { nowMs, normalizeRoute, afterFrames, whenIdle, generateId } from './utils';
-import type { Transition, RTLogEntry, HistoryLike, HistoryLocation } from './types';
+import type { Transition, RTLogEntry } from './types';
 
 class RT {
   private _currentTransition: Transition | null = null;
@@ -206,79 +206,6 @@ export const trackCritical = (promise?: Promise<unknown>): (() => void) | undefi
   return rt.trackCritical(promise);
 };
 
-const parseHistoryArgs = (
-  pathOrLocation: string | Partial<HistoryLocation>,
-): { pathname: string; search: string } => {
-  if (typeof pathOrLocation === 'string') {
-    try {
-      const url = new URL(pathOrLocation, window.location.origin);
-      return { pathname: url.pathname, search: url.search };
-    } catch {
-      return { pathname: pathOrLocation, search: '' };
-    }
-  }
-
-  if (pathOrLocation && typeof pathOrLocation === 'object') {
-    return {
-      pathname: pathOrLocation.pathname || window.location.pathname,
-      search: pathOrLocation.search || '',
-    };
-  }
-
-  return { pathname: window.location.pathname, search: '' };
-};
-
-/**
- * Patches a history-like object to auto-call rt.startTransition on navigation.
- * Works with history v4 and v5. Also starts initial transition for current URL.
- */
-export const patchHistory = (history: HistoryLike): void => {
-  if (!IS_DEV) {
-    return;
-  }
-
-  const originalPush = history.push.bind(history);
-
-  history.push = (pathOrLocation: string | Partial<HistoryLocation>, state?: unknown) => {
-    const { pathname, search } = parseHistoryArgs(pathOrLocation);
-    rt.startTransition(pathname, search);
-    return originalPush(pathOrLocation, state);
-  };
-
-  const originalReplace = history.replace.bind(history);
-
-  history.replace = (pathOrLocation: string | Partial<HistoryLocation>, state?: unknown) => {
-    const { pathname, search } = parseHistoryArgs(pathOrLocation);
-    rt.startTransition(pathname, search);
-    return originalReplace(pathOrLocation, state);
-  };
-
-  history.listen((...args: unknown[]) => {
-    let location: HistoryLocation;
-    let action: string;
-
-    if (args.length >= 2 && typeof args[1] === 'string') {
-      // history v4: callback(location, action)
-      location = args[0] as HistoryLocation;
-      action = args[1];
-    } else if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
-      // history v5: callback({ location, action })
-      const update = args[0] as { location: HistoryLocation; action: string };
-      location = update.location;
-      action = update.action;
-    } else {
-      return;
-    }
-
-    if (action === 'POP') {
-      rt.startTransition(location.pathname, location.search || '');
-    }
-  });
-
-  // Initial transition for the current page
-  rt.startTransition(window.location.pathname, window.location.search);
-};
-
 export default rt;
 
 export { VERSION } from './config';
@@ -286,6 +213,4 @@ export { VERSION } from './config';
 export type {
   Transition,
   RTLogEntry,
-  HistoryLike,
-  HistoryLocation,
 } from './types';

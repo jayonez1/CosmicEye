@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- **[extensions]** Новый модуль `history-route-observer` — нейтральный observer навигации через history API.
+- **[extensions]** `observeHistory(history)` — возвращает idempotent observer (WeakMap по объекту history).
+- **[extensions]** `observer.subscribe(listener)` — подписка на события `INIT`, `PUSH`, `REPLACE`, `POP`.
+- **[extensions]** `observer.unpatch()` — снятие патча, восстановление оригинальных методов, очистка.
+- **[extensions]** Типы: `NavigationEvent`, `NavigationListener`, `NavigationAction`, `HistoryRouteObserver`, `HistoryLike`, `HistoryLocation`.
+- Тесты observer: 21 тест (INIT, PUSH, REPLACE, POP v4/v5, idempotency, unpatch, subscribe/unsubscribe).
+- Тесты RDR pre-render reset через observer: 5 тестов.
+
+### Changed
+
+- **[rt] BREAKING**: Удалён `patchHistory` из RT. Используйте `observeHistory` + `observer.subscribe()`.
+- **[rt]** Удалены типы `HistoryLike`, `HistoryLocation` из `src/rt/types.ts` — перемещены в observer.
+- **[extensions]** `RouteTracker` теперь позиционируется как **post-render** провайдер. Pre-render логика — через `observeHistory`.
+- **[docs]** `docs/rt/INTEGRATION.md` — архитектура pre-render/post-render, миграция с v0.2.0.
+- **[docs]** `docs/rdr/INTEGRATION.md` — рекомендуемый pre-render reset через observer.
+- **[docs]** `src/extensions/route-tracker/README.md` — RouteTracker как post-render only.
+
+### Removed
+
+- **[rt]** `patchHistory` — заменён на `observeHistory` из extensions.
+- **[rt]** `parseHistoryArgs` — внутренний helper, перенесён в observer как `parseLocation`.
+
+### Migration
+
+```diff
+- import { initRT, patchHistory } from 'cosmic-eye';
+- patchHistory(history);
++ import { initRT, rt, observeHistory } from 'cosmic-eye';
++ const observer = observeHistory(history);
++ observer.subscribe(({ pathname, search }) => {
++   rt.startTransition(pathname, search);
++ });
+```
+
 ## 0.2.0
 
 ### Added

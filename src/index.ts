@@ -19,13 +19,23 @@ export type {
 } from './rdr';
 
 // === RT ===
-export { initRT, patchHistory, trackCritical } from './rt';
+export { initRT, trackCritical } from './rt';
 export { default as rt } from './rt';
 export { VERSION as RT_VERSION } from './rt';
 
 export type {
   Transition,
   RTLogEntry,
+} from './rt';
+
+// === Extensions (non-React) ===
+export { observeHistory } from './extensions';
+
+export type {
   HistoryLike,
   HistoryLocation,
-} from './rt';
+  HistoryRouteObserver,
+  NavigationAction,
+  NavigationEvent,
+  NavigationListener,
+} from './extensions';

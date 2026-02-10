@@ -3,8 +3,11 @@ import { useLocation } from 'react-router-dom';
 import type { RouteTrackerProps, RouteChangeListener } from './types';
 
 /**
- * "Dumb" route-change provider. Detects pathname changes via react-router's
+ * Post-render route-change provider. Detects pathname changes via react-router's
  * useLocation and calls every listener in onRouteChange with (pathname, search).
+ *
+ * Fires **after** React commit (useLayoutEffect). For pre-render events
+ * (e.g. RDR reset, RT startTransition), use `observeHistory` instead.
  *
  * The component itself has NO knowledge of RDR, RT, or any other module —
  * the consumer decides what happens on route change by passing callbacks.
@@ -12,11 +15,10 @@ import type { RouteTrackerProps, RouteChangeListener } from './types';
  * @example
  * ```tsx
  * import { RouteTracker } from 'cosmic-eye/react';
- * import rdr, { rt } from 'cosmic-eye';
+ * import { rt } from 'cosmic-eye';
  *
  * <RouteTracker
  *   onRouteChange={[
- *     () => { rdr.resetTiming(); rdr.resetActions(); },
  *     (pathname) => { rt.markRendered(pathname); },
  *   ]}
  * >

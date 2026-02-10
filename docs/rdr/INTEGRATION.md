@@ -53,9 +53,38 @@ function callApi(service: string, method: string, params: unknown, body: unknown
 
 Если `s` или `m` отсутствует/ложное, вызов ничего не делает.
 
-## Шаг 4: Обрабатывайте смену маршрутов SPA (опционально)
+## Шаг 4: Обрабатывайте смену маршрутов SPA (рекомендуется)
 
-Если ваше SPA переходит между маршрутами без полной перезагрузки страницы, вызывайте `resetTiming()` при смене маршрута, чтобы получать корректные значения `timeSincePageLoadMs`:
+Если ваше SPA переходит между маршрутами без полной перезагрузки страницы, вызывайте `resetTiming()` при смене маршрута, чтобы получать корректные значения `timeSincePageLoadMs`.
+
+### Рекомендуемый способ: pre-render reset через observer
+
+`observeHistory` эмитит события навигации **до** React-рендера — это даёт наиболее точный момент сброса:
+
+```ts
+import rdr, { observeHistory } from 'cosmic-eye';
+import { createBrowserHistory } from 'history';
+
+const history = createBrowserHistory();
+
+const observer = observeHistory(history);
+observer.subscribe(() => {
+  rdr.resetTiming();
+  rdr.resetActions();
+});
+```
+
+`observeHistory` идемпотентен — если вы уже подключили observer для RT, используйте тот же:
+
+```ts
+observer.subscribe(({ pathname, search }) => {
+  rt.startTransition(pathname, search);   // RT pre-render
+  rdr.resetTiming();                      // RDR pre-render reset
+  rdr.resetActions();
+});
+```
+
+### Альтернатива: через роутер
 
 ```ts
 import rdr from 'cosmic-eye';
@@ -65,6 +94,8 @@ router.afterEach(() => {
   rdr.resetActions();
 });
 ```
+
+> **Примечание**: `RouteTracker` (`cosmic-eye/react`) — это **post-render** компонент. Для RDR reset рекомендуется pre-render подход через `observeHistory`, а не RouteTracker.
 
 ## Шаг 5: Очистка (опционально)
 
