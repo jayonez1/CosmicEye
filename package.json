@@ -58,6 +58,14 @@
     "metrics"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayonez1/CosmicEye.git"
+  },
+  "homepage": "https://github.com/jayonez1/CosmicEye#readme",
+  "bugs": {
+    "url": "https://github.com/jayonez1/CosmicEye/issues"
+  },
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
