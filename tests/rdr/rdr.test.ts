@@ -4,8 +4,8 @@ import { TIMINGS, FLUSH } from '../../src/rdr/config';
 // We need to test the RDR class in isolation, so we import fresh modules
 // and mock sampling to control initialization.
 
-let rdr: typeof import('../../src/index').default;
-let initRDR: typeof import('../../src/index').initRDR;
+let rdr: typeof import('../../src/rdr/index').default;
+let initRDR: typeof import('../../src/rdr/index').initRDR;
 let consoleSpy: MockInstance;
 
 // Mock sampling — default: enabled
@@ -21,7 +21,7 @@ beforeEach(async () => {
   // Reset modules to get a fresh RDR instance each test
   vi.resetModules();
 
-  const mod = await import('../../src/index');
+  const mod = await import('../../src/rdr/index');
   rdr = mod.default;
   initRDR = mod.initRDR;
 });
@@ -57,7 +57,7 @@ describe('RDR.init', () => {
       _resetSamplingState: vi.fn(),
     }));
 
-    const mod = await import('../../src/index');
+    const mod = await import('../../src/rdr/index');
     const localRdr = mod.default;
     mod.initRDR();
 

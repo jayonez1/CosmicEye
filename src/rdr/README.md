@@ -4,11 +4,6 @@ Detects and logs duplicate API requests in SPAs. Uses FNV-1a hashing of endpoint
 
 ## Integration
 
-### Prerequisites
-
-- JavaScript/TypeScript SPA with a centralized API request layer
-- npm or compatible package manager
-
 ### Step 1: Install
 
 ```bash
@@ -32,7 +27,7 @@ initRDR();
 Find the place in your application where API requests are sent (e.g. service layer, fetch wrapper, or middleware), and pass each request payload to `rdr.reqHandler()`.
 
 ```ts
-import rdr from 'cosmic-eye';
+import { rdr } from 'cosmic-eye';
 
 function callApi(service: string, method: string, params: unknown, body: unknown) {
   const payload = { s: service, m: method, p: params, b: body };
@@ -63,7 +58,7 @@ If your SPA navigates between routes without a full page reload, call `resetTimi
 `observeHistory` emits navigation events **before** React render — this gives the most accurate reset moment:
 
 ```ts
-import rdr, { observeHistory } from 'cosmic-eye';
+import { rdr, observeHistory } from 'cosmic-eye';
 import { createBrowserHistory } from 'history';
 
 const history = createBrowserHistory();
@@ -75,35 +70,14 @@ observer.subscribe(() => {
 });
 ```
 
-`observeHistory` is idempotent — if you already connected an observer for RT, use the same one:
-
-```ts
-observer.subscribe(({ pathname, search }) => {
-  rt.startTransition(pathname, search);   // RT pre-render
-  rdr.resetTiming();                      // RDR pre-render reset
-  rdr.resetActions();
-});
-```
-
-#### Alternative: via router
-
-```ts
-import rdr from 'cosmic-eye';
-
-router.afterEach(() => {
-  rdr.resetTiming();
-  rdr.resetActions();
-});
-```
-
-> **Note**: `RouteTracker` (`cosmic-eye/react`) is a **post-render** component. For RDR reset, the pre-render approach via `observeHistory` is recommended over RouteTracker.
+`observeHistory` is idempotent — calling again with the same `history` returns the same observer. If you need to reset actions on route change, add `rdr.resetActions()` to the subscriber.
 
 ### Step 5: Cleanup (optional)
 
 If your application supports hot-module replacement or requires teardown:
 
 ```ts
-import rdr from 'cosmic-eye';
+import { rdr } from 'cosmic-eye';
 
 rdr.destroy();
 ```

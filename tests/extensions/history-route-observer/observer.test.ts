@@ -6,12 +6,14 @@ import type { HistoryLike, NavigationEvent } from '../../../src/extensions/histo
 function createMockHistory(opts?: { v4?: boolean }): HistoryLike & {
   _listeners: ((...args: unknown[]) => void)[];
   _simulatePop: (pathname: string, search?: string) => void;
+  _simulateListen: (pathname: string, action: string, search?: string) => void;
 } {
   const listeners: ((...args: unknown[]) => void)[] = [];
 
   const history: HistoryLike & {
     _listeners: typeof listeners;
     _simulatePop: (pathname: string, search?: string) => void;
+    _simulateListen: (pathname: string, action: string, search?: string) => void;
   } = {
     location: { pathname: '/initial', search: '' },
     push: vi.fn(),
@@ -31,6 +33,17 @@ function createMockHistory(opts?: { v4?: boolean }): HistoryLike & {
           cb(location, 'POP');
         } else {
           cb({ location, action: 'POP' });
+        }
+      }
+    },
+    /** Simulate history.listen firing for any action (PUSH/REPLACE/POP). */
+    _simulateListen(pathname: string, action: string, search = '') {
+      const location = { pathname, search };
+      for (const cb of listeners) {
+        if (opts?.v4) {
+          cb(location, action);
+        } else {
+          cb({ location, action });
         }
       }
     },
@@ -349,6 +362,73 @@ describe('observeHistory', () => {
 
       expect(events).toHaveLength(1);
       expect(events[0].pathname).toBe('/resilient');
+
+      observer.unpatch();
+    });
+  });
+
+  describe('no duplicate events', () => {
+    it('does NOT emit duplicate when listen fires PUSH after patched push', () => {
+      const observer = observeHistory(history);
+      const events: NavigationEvent[] = [];
+      observer.subscribe((e) => events.push(e));
+      events.length = 0;
+
+      // patched push emits PUSH
+      history.push('/page');
+      // history.listen fires PUSH too (as real history does) — should be ignored
+      history._simulateListen('/page', 'PUSH');
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual({ pathname: '/page', search: '', action: 'PUSH' });
+
+      observer.unpatch();
+    });
+
+    it('does NOT emit duplicate when listen fires REPLACE after patched replace', () => {
+      const observer = observeHistory(history);
+      const events: NavigationEvent[] = [];
+      observer.subscribe((e) => events.push(e));
+      events.length = 0;
+
+      // patched replace emits REPLACE
+      history.replace('/login');
+      // history.listen fires REPLACE too — should be ignored
+      history._simulateListen('/login', 'REPLACE');
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual({ pathname: '/login', search: '', action: 'REPLACE' });
+
+      observer.unpatch();
+    });
+
+    it('still emits POP from listen callback', () => {
+      const observer = observeHistory(history);
+      const events: NavigationEvent[] = [];
+      observer.subscribe((e) => events.push(e));
+      events.length = 0;
+
+      // POP from listen should still go through
+      history._simulateListen('/back', 'POP', '?from=nav');
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual({ pathname: '/back', search: '?from=nav', action: 'POP' });
+
+      observer.unpatch();
+    });
+
+    it('does NOT emit duplicate with v4 history', () => {
+      const v4History = createMockHistory({ v4: true });
+      const observer = observeHistory(v4History);
+      const events: NavigationEvent[] = [];
+      observer.subscribe((e) => events.push(e));
+      events.length = 0;
+
+      v4History.push('/v4-push');
+      v4History._simulateListen('/v4-push', 'PUSH');
+
+      expect(events).toHaveLength(1);
+      expect(events[0].action).toBe('PUSH');
 
       observer.unpatch();
     });

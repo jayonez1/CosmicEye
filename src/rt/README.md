@@ -16,13 +16,13 @@ Measures SPA route transition timing: render time (`routeRenderMs`) and Time To 
 RT measures two moments of each transition:
 
 1. **Pre-render** — navigation start (`startTransition`). Happens **before** React render, via `observeHistory`.
-2. **Post-render** — render completion (`markRendered`). Happens **after** React commit, via `RouteTracker`.
+2. **Post-render** — render completion (`markRendered`). Happens **after** React commit, via `RouteRenderObserver`.
 
 ```
 history.push('/page')
   → observeHistory: emit PUSH → rt.startTransition()   ← pre-render
   → React renders <Page />
-  → RouteTracker: useLayoutEffect → rt.markRendered()   ← post-render
+  → RouteRenderObserver: useLayoutEffect → rt.markRendered()   ← post-render
   → 2×rAF + idle → TTI
 ```
 
@@ -54,14 +54,14 @@ observer.subscribe(({ pathname, search }) => {
 - In production (`NODE_ENV=production`) the module does not activate.
 - `observeHistory` is idempotent — calling again with the same `history` returns the same observer.
 
-### Step 3: Connect RouteTracker (post-render)
+### Step 3: Connect RouteRenderObserver (post-render)
 
 ```tsx
-import { RouteTracker } from 'cosmic-eye/react';
+import { RouteRenderObserver } from 'cosmic-eye/react';
 import { rt } from 'cosmic-eye';
 
 <Router history={history}>
-  <RouteTracker
+  <RouteRenderObserver
     onRouteChange={[
       (pathname) => { rt.markRendered(pathname); },
     ]}
@@ -69,11 +69,11 @@ import { rt } from 'cosmic-eye';
     <Switch>
       <Route path="/home" component={Home} />
     </Switch>
-  </RouteTracker>
+  </RouteRenderObserver>
 </Router>
 ```
 
-`RouteTracker` fires **after** React commit (`useLayoutEffect`) — this records the render moment.
+`RouteRenderObserver` fires **after** React commit (`useLayoutEffect`) — this records the render moment.
 
 ### Step 4: Track critical operations (optional)
 
@@ -93,35 +93,7 @@ done();
 
 TTI will not be recorded until all critical operations complete.
 
-### Step 5: Combine with RDR
-
-The observer works as a single pre-render source for both modules:
-
-```ts
-import rdr, { rt, observeHistory } from 'cosmic-eye';
-
-const observer = observeHistory(history);
-observer.subscribe(({ pathname, search }) => {
-  // Pre-render: RT starts timing, RDR resets timers
-  rt.startTransition(pathname, search);
-  rdr.resetTiming();
-  rdr.resetActions();
-});
-```
-
-RouteTracker remains only for post-render:
-
-```tsx
-<RouteTracker
-  onRouteChange={[
-    (pathname) => { rt.markRendered(pathname); },
-  ]}
->
-  {children}
-</RouteTracker>
-```
-
-### Step 6: Cleanup (optional)
+### Step 5: Cleanup (optional)
 
 ```ts
 import { rt } from 'cosmic-eye';
@@ -147,7 +119,7 @@ rt.destroy();       // clears RT state
 - **Dev-only**: RT only works when `NODE_ENV !== 'production'`.
 - **Flush destination**: metrics are sent to `console.log`. A pluggable transport will be added later.
 - **Normalization**: `/users/123` → `/users/:id` for metric aggregation.
-- **Without RouteTracker**: RT will time out after 20s (expected — `markRendered` not called).
+- **Without RouteRenderObserver**: RT will time out after 20s (expected — `markRendered` not called).
 
 ---
 

@@ -10,7 +10,7 @@ A set of RUM metrics for SPAs. Two independent modules:
 - Zero runtime dependencies for the core (React is an optional peer for extensions)
 - RDR: deterministic sampling ~5% in production, always enabled in dev
 - RT: dev-only, measures `route_render_ms` and `route_tti_ms`
-- `RouteTracker` — "dumb" React provider for both modules (post-render)
+- `RouteRenderObserver` — "dumb" React provider (post-render)
 - `observeHistory` — neutral pre-render navigation observer (history v4/v5)
 
 ## Installation
@@ -24,13 +24,13 @@ npm install cosmic-eye
 ### RDR
 
 ```ts
-import rdr, { initRDR } from 'cosmic-eye';
+import { rdr, initRDR } from 'cosmic-eye';
 
 initRDR();
 rdr.reqHandler({ s: 'UserService', m: 'getProfile', p: { id: 42 }, b: {} });
 ```
 
-### RT + observeHistory + RouteTracker
+### RT + observeHistory + RouteRenderObserver
 
 ```ts
 import { initRT, rt, observeHistory } from 'cosmic-eye';
@@ -43,23 +43,21 @@ initRT();
 const observer = observeHistory(history);
 observer.subscribe(({ pathname, search }) => {
   rt.startTransition(pathname, search);
-  rdr.resetTiming();
-  rdr.resetActions();
 });
 ```
 
 ```tsx
-import { RouteTracker } from 'cosmic-eye/react';
+import { RouteRenderObserver } from 'cosmic-eye/react';
 
-// Post-render: RouteTracker fires after React commit
+// Post-render: RouteRenderObserver fires after React commit
 <Router history={history}>
-  <RouteTracker
+  <RouteRenderObserver
     onRouteChange={[
       (pathname) => { rt.markRendered(pathname); },
     ]}
   >
     <Switch>...</Switch>
-  </RouteTracker>
+  </RouteRenderObserver>
 </Router>
 ```
 
@@ -110,7 +108,7 @@ In **development** (`NODE_ENV !== 'production'`), sampling is always enabled.
 | `observer.subscribe(listener)` | Subscribe to `INIT/PUSH/REPLACE/POP`. Returns `unsubscribe` |
 | `observer.unpatch()` | Remove patch, clean up |
 
-### RouteTracker (`cosmic-eye/react`)
+### RouteRenderObserver (`cosmic-eye/react`)
 
 | Prop | Type | Description |
 |------|------|-------------|
@@ -129,7 +127,7 @@ src/
   rt/                   — RT module: route transition metrics
   extensions/
     history-route-observer/ — navigation observer (pre-render)
-    route-tracker/      — RouteTracker React component (post-render)
+    route-render-observer/  — RouteRenderObserver React component (post-render)
 tests/
   rdr/                  — RDR tests (49)
   rt/                   — RT tests (19)
@@ -153,7 +151,7 @@ Each module has its own README with integration guide, configuration reference, 
 - [src/rdr/README.md](src/rdr/README.md) — RDR documentation
 - [src/rt/README.md](src/rt/README.md) — RT documentation
 - [src/extensions/history-route-observer/README.md](src/extensions/history-route-observer/README.md) — observer documentation
-- [src/extensions/route-tracker/README.md](src/extensions/route-tracker/README.md) — RouteTracker documentation
+- [src/extensions/route-render-observer/README.md](src/extensions/route-render-observer/README.md) — RouteRenderObserver documentation
 - [CHANGELOG.md](CHANGELOG.md) — change history
 
 ## License

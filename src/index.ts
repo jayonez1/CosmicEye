@@ -3,9 +3,7 @@
 
 // === RDR ===
 export { initRDR, hashText, makeRequestKey } from './rdr';
-export { default } from './rdr';
 export { default as rdr } from './rdr';
-export { VERSION as RDR_VERSION } from './rdr';
 
 export type {
   ApiRequestPayload,
@@ -21,7 +19,6 @@ export type {
 // === RT ===
 export { initRT, trackCritical } from './rt';
 export { default as rt } from './rt';
-export { VERSION as RT_VERSION } from './rt';
 
 export type {
   Transition,

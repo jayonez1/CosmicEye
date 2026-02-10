@@ -1,32 +1,30 @@
 import { createElement, Fragment, useLayoutEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import type { RouteTrackerProps, RouteChangeListener } from './types';
+import type { RouteRenderObserverProps, RouteChangeListener } from './types';
 
 /**
  * Post-render route-change provider. Detects pathname changes via react-router's
  * useLocation and calls every listener in onRouteChange with (pathname, search).
  *
- * Fires **after** React commit (useLayoutEffect). For pre-render events
- * (e.g. RDR reset, RT startTransition), use `observeHistory` instead.
+ * Fires **after** React commit (useLayoutEffect).
  *
- * The component itself has NO knowledge of RDR, RT, or any other module —
+ * The component itself has NO knowledge of any other module —
  * the consumer decides what happens on route change by passing callbacks.
  *
  * @example
  * ```tsx
- * import { RouteTracker } from 'cosmic-eye/react';
- * import { rt } from 'cosmic-eye';
+ * import { RouteRenderObserver } from 'cosmic-eye/react';
  *
- * <RouteTracker
+ * <RouteRenderObserver
  *   onRouteChange={[
- *     (pathname) => { rt.markRendered(pathname); },
+ *     (pathname) => { console.log('route changed:', pathname); },
  *   ]}
  * >
  *   <Switch>...</Switch>
- * </RouteTracker>
+ * </RouteRenderObserver>
  * ```
  */
-export function RouteTracker({ children, onRouteChange }: RouteTrackerProps) {
+export function RouteRenderObserver({ children, onRouteChange }: RouteRenderObserverProps) {
   const location = useLocation();
   const prevPathnameRef = useRef<string | null>(null);
   const callbacksRef = useRef<RouteChangeListener[] | undefined>(onRouteChange);
@@ -55,4 +53,4 @@ export function RouteTracker({ children, onRouteChange }: RouteTrackerProps) {
   return createElement(Fragment, null, children);
 }
 
-export type { RouteTrackerProps, RouteChangeListener } from './types';
+export type { RouteRenderObserverProps, RouteChangeListener } from './types';

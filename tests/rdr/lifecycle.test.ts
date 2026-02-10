@@ -5,8 +5,8 @@ vi.mock('../../src/rdr/sampling', () => ({
   _resetSamplingState: vi.fn(),
 }));
 
-let rdr: typeof import('../../src/index').default;
-let initRDR: typeof import('../../src/index').initRDR;
+let rdr: typeof import('../../src/rdr/index').default;
+let initRDR: typeof import('../../src/rdr/index').initRDR;
 let consoleSpy: MockInstance;
 
 beforeEach(async () => {
@@ -14,7 +14,7 @@ beforeEach(async () => {
   consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.resetModules();
 
-  const mod = await import('../../src/index');
+  const mod = await import('../../src/rdr/index');
   rdr = mod.default;
   initRDR = mod.initRDR;
 });

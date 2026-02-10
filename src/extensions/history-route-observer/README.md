@@ -1,14 +1,15 @@
 # history-route-observer
 
-Neutral **pre-render** navigation observer for the `history` library (v4 and v5). Patches `push` and `replace` methods, listens for `POP` events, and emits normalized `NavigationEvent` objects to subscribers.
+**Pre-render** navigation observer for the `history` library (v4 and v5). Patches `push` and `replace` methods, listens for `POP` events, and emits normalized `NavigationEvent` objects to subscribers.
 
 ## Purpose
 
-Provides a single, shared source of navigation events that fires **before** React render. Both RT and RDR modules can subscribe to the same observer without redundant history patching.
+Provides a single, shared source of navigation events that fires **before** React render. Any number of subscribers can listen to the same observer without redundant history patching.
 
-- **No knowledge** of RT, RDR, or any other module — fully neutral.
+- **Fully neutral** — has no knowledge of any other module.
 - **Idempotent** via `WeakMap` — calling `observeHistory` twice with the same `history` object returns the same observer.
 - **INIT** event emitted once on first subscription (current location).
+- **No duplicates** — `PUSH`/`REPLACE` are emitted by patched methods only; `listen` callback is filtered to `POP` only.
 
 ## API
 
@@ -70,17 +71,17 @@ The observer detects the `listen` callback signature automatically:
 - **v4**: `callback(location, action)`
 - **v5**: `callback({ location, action })`
 
-## Example: RT + RDR combined
+## Example
 
 ```ts
-import { initRT, rt, observeHistory } from 'cosmic-eye';
-import rdr from 'cosmic-eye';
+import { observeHistory } from 'cosmic-eye';
+import { createBrowserHistory } from 'history';
 
+const history = createBrowserHistory();
 const observer = observeHistory(history);
-observer.subscribe(({ pathname, search }) => {
-  rt.startTransition(pathname, search);
-  rdr.resetTiming();
-  rdr.resetActions();
+
+observer.subscribe(({ pathname, search, action }) => {
+  console.log(`[${action}] ${pathname}${search}`);
 });
 ```
 

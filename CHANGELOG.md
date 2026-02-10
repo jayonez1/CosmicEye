@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- **[extensions]** `RouteRenderObserver` — renamed from `RouteTracker`, same behavior.
+- Observer tests: 4 new no-duplicate regression tests.
+
+### Changed
+
+- **[extensions] BREAKING**: `RouteTracker` renamed to `RouteRenderObserver`. Directory `route-tracker` → `route-render-observer`. Type `RouteTrackerProps` → `RouteRenderObserverProps`.
+- **[root] BREAKING**: Removed default export of `rdr`. Use `import { rdr } from 'cosmic-eye'` instead of `import rdr from 'cosmic-eye'`.
+- **[root] BREAKING**: Removed `RDR_VERSION` and `RT_VERSION` exports.
+- **[extensions]** Fixed duplicate navigation events in `history-route-observer` — `listen` callback now only emits `POP`; `PUSH`/`REPLACE` come exclusively from patched methods.
+- **[docs]** All extension READMEs are now self-contained — no cross-module references.
+- **[docs]** RDR README: removed RT mentions, removed "Alternative: via router" section, removed Prerequisites block.
+- **[docs]** RT README: removed RDR cross-references, removed "Combine with RDR" section.
+
+### Removed
+
+- **[root]** Default export (`export { default } from './rdr'`).
+- **[root]** `RDR_VERSION` and `RT_VERSION` exports.
+- **[extensions]** `_placeholder` directory.
+- **[extensions]** `RouteTracker` name (replaced by `RouteRenderObserver`).
+- **[extensions]** `RouteTrackerProps` type (replaced by `RouteRenderObserverProps`).
+
+### Migration
+
+```diff
+- import rdr from 'cosmic-eye';
++ import { rdr } from 'cosmic-eye';
+
+- import { RDR_VERSION, RT_VERSION } from 'cosmic-eye';
+  // RDR_VERSION and RT_VERSION are no longer exported
+
+- import { RouteTracker } from 'cosmic-eye/react';
++ import { RouteRenderObserver } from 'cosmic-eye/react';
+
+- <RouteTracker onRouteChange={[...]}>{children}</RouteTracker>
++ <RouteRenderObserver onRouteChange={[...]}>{children}</RouteRenderObserver>
+
+- import type { RouteTrackerProps } from 'cosmic-eye/react';
++ import type { RouteRenderObserverProps } from 'cosmic-eye/react';
+```
+
 ## 0.3.0
 
 ### Added

@@ -9,7 +9,7 @@ vi.mock('react-router-dom', () => ({
   useLocation: () => mockLocation,
 }));
 
-import { RouteTracker } from '../../../src/extensions/route-tracker';
+import { RouteRenderObserver } from '../../../src/extensions/route-render-observer';
 
 beforeEach(() => {
   mockLocation = { pathname: '/home', search: '', hash: '', state: null, key: 'default' };
@@ -19,10 +19,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('RouteTracker', () => {
+describe('RouteRenderObserver', () => {
   it('renders children', () => {
     const { container } = render(
-      createElement(RouteTracker, {
+      createElement(RouteRenderObserver, {
         onRouteChange: [],
         children: createElement('div', { 'data-testid': 'child' }, 'Hello'),
       }),
@@ -36,7 +36,7 @@ describe('RouteTracker', () => {
     const cb2 = vi.fn();
 
     render(
-      createElement(RouteTracker, {
+      createElement(RouteRenderObserver, {
         onRouteChange: [cb1, cb2],
         children: createElement('div'),
       }),
@@ -50,7 +50,7 @@ describe('RouteTracker', () => {
     const cb = vi.fn();
 
     const { rerender } = render(
-      createElement(RouteTracker, {
+      createElement(RouteRenderObserver, {
         onRouteChange: [cb],
         children: createElement('div'),
       }),
@@ -63,7 +63,7 @@ describe('RouteTracker', () => {
     mockLocation = { ...mockLocation, pathname: '/about', search: '?tab=1' };
 
     rerender(
-      createElement(RouteTracker, {
+      createElement(RouteRenderObserver, {
         onRouteChange: [cb],
         children: createElement('div'),
       }),
@@ -76,7 +76,7 @@ describe('RouteTracker', () => {
     const cb = vi.fn();
 
     const { rerender } = render(
-      createElement(RouteTracker, {
+      createElement(RouteRenderObserver, {
         onRouteChange: [cb],
         children: createElement('div'),
       }),
@@ -88,7 +88,7 @@ describe('RouteTracker', () => {
     mockLocation = { ...mockLocation, search: '?page=2' };
 
     rerender(
-      createElement(RouteTracker, {
+      createElement(RouteRenderObserver, {
         onRouteChange: [cb],
         children: createElement('div'),
       }),
@@ -102,7 +102,7 @@ describe('RouteTracker', () => {
     const succeeding = vi.fn();
 
     render(
-      createElement(RouteTracker, {
+      createElement(RouteRenderObserver, {
         onRouteChange: [failing, succeeding],
         children: createElement('div'),
       }),
@@ -114,7 +114,7 @@ describe('RouteTracker', () => {
 
   it('works without onRouteChange prop', () => {
     expect(() => {
-      render(createElement(RouteTracker, { children: createElement('div') }));
+      render(createElement(RouteRenderObserver, { children: createElement('div') }));
     }).not.toThrow();
   });
 });

@@ -2,7 +2,6 @@ import type {
   HistoryLike,
   HistoryLocation,
   HistoryRouteObserver,
-  NavigationAction,
   NavigationEvent,
   NavigationListener,
 } from './types';
@@ -101,7 +100,9 @@ export function observeHistory(history: HistoryLike): HistoryRouteObserver {
     return originalReplace(pathOrLocation, state);
   };
 
-  // --- Listen for POP (back/forward) ---
+  // --- Listen for POP (back/forward) only ---
+  // PUSH and REPLACE are already emitted by patched methods above.
+  // history.listen fires for ALL actions, so we filter to POP only to avoid duplicates.
   let unlisten: (() => void) | void;
 
   unlisten = history.listen((...args: unknown[]) => {
@@ -125,10 +126,15 @@ export function observeHistory(history: HistoryLike): HistoryRouteObserver {
       return;
     }
 
+    // Only emit POP — PUSH/REPLACE are handled by patched methods
+    if (action !== 'POP') {
+      return;
+    }
+
     emit({
       pathname: location.pathname,
       search: location.search || '',
-      action: action as NavigationAction,
+      action: 'POP',
     });
   });
 

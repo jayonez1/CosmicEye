@@ -1,22 +1,20 @@
-# RouteTracker
+# RouteRenderObserver
 
 React component for **post-render** route change tracking in SPAs.
 
 ## Purpose
 
-`RouteTracker` is a "dumb" provider. It has **no knowledge** of RDR, RT, or any other module.
+`RouteRenderObserver` is a "dumb" provider. It has **no knowledge** of any other module.
 Its only job: detect `pathname` changes via `useLocation()` and call registered callbacks **after** React commit.
-
-> **Pre-render** navigation events (before render) are handled via `observeHistory` — a separate extension. RouteTracker is intended for **post-render** callbacks such as `rt.markRendered()`.
 
 ## API
 
 ```tsx
-import { RouteTracker } from 'cosmic-eye/react';
+import { RouteRenderObserver } from 'cosmic-eye/react';
 
-<RouteTracker onRouteChange={[callback1, callback2]}>
+<RouteRenderObserver onRouteChange={[callback1, callback2]}>
   {children}
-</RouteTracker>
+</RouteRenderObserver>
 ```
 
 ### Props
@@ -37,32 +35,20 @@ import { RouteTracker } from 'cosmic-eye/react';
 ## Integration example
 
 ```tsx
-import { rt } from 'cosmic-eye';
-import { RouteTracker } from 'cosmic-eye/react';
+import { RouteRenderObserver } from 'cosmic-eye/react';
 
 <Router history={history}>
-  <RouteTracker
+  <RouteRenderObserver
     onRouteChange={[
-      (pathname) => { rt.markRendered(pathname); },
+      (pathname) => { console.log('route changed:', pathname); },
     ]}
   >
     <Switch>
       <Route path="/home" component={Home} />
     </Switch>
-  </RouteTracker>
+  </RouteRenderObserver>
 </Router>
 ```
-
-> **For pre-render reset** (RDR `resetTiming`, RT `startTransition`) use `observeHistory`:
-> ```ts
-> import { observeHistory, rt } from 'cosmic-eye';
-> const observer = observeHistory(history);
-> observer.subscribe(({ pathname, search }) => {
->   rt.startTransition(pathname, search);
->   rdr.resetTiming();
->   rdr.resetActions();
-> });
-> ```
 
 ## Requirements
 
