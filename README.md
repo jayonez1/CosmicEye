@@ -1,16 +1,17 @@
 # CosmicEye
 
-Набор RUM-метрик для SPA. Два независимых модуля:
+A set of RUM metrics for SPAs. Two independent modules:
 
-- **RDR** (RUM Duplicate Requests) — детект и логирование дублирующихся API-запросов.
-- **RT** (Route Transition Metrics) — измерение времени переходов между маршрутами (render + TTI).
+- **RDR** (RUM Duplicate Requests) — detects and logs duplicate API requests.
+- **RT** (Route Transition Metrics) — measures route transition timing (render + TTI).
 
-**Ключевые свойства:**
+**Key properties:**
 
-- Нуль runtime-зависимостей для ядра (React — optional peer для расширений)
-- RDR: детерминированный семплинг ~5% в production, всегда включен в dev
-- RT: dev-only, измеряет `route_render_ms` и `route_tti_ms`
-- `RouteTracker` — «глупый» React-провайдер для обоих модулей
+- Zero runtime dependencies for the core (React is an optional peer for extensions)
+- RDR: deterministic sampling ~5% in production, always enabled in dev
+- RT: dev-only, measures `route_render_ms` and `route_tti_ms`
+- `RouteTracker` — "dumb" React provider for both modules (post-render)
+- `observeHistory` — neutral pre-render navigation observer (history v4/v5)
 
 ## Installation
 
@@ -38,7 +39,7 @@ import { createBrowserHistory } from 'history';
 const history = createBrowserHistory();
 initRT();
 
-// Pre-render: observer эмитит события навигации до React-рендера
+// Pre-render: observer emits navigation events before React render
 const observer = observeHistory(history);
 observer.subscribe(({ pathname, search }) => {
   rt.startTransition(pathname, search);
@@ -50,7 +51,7 @@ observer.subscribe(({ pathname, search }) => {
 ```tsx
 import { RouteTracker } from 'cosmic-eye/react';
 
-// Post-render: RouteTracker вызывается после React commit
+// Post-render: RouteTracker fires after React commit
 <Router history={history}>
   <RouteTracker
     onRouteChange={[
@@ -83,87 +84,77 @@ In **development** (`NODE_ENV !== 'production'`), sampling is always enabled.
 
 ### RDR
 
-| Функция | Описание |
-|---------|----------|
-| `initRDR()` | Инициализация. Безопасно вызывать многократно. |
-| `rdr.reqHandler(payload)` | Передать API-запрос. `{ s, m, p?, b? }` |
-| `rdr.resetTiming()` | Сброс таймера (SPA route change) |
-| `rdr.resetActions()` | Очистка буфера действий |
-| `rdr.destroy()` | Остановить таймеры, flush, очистить |
+| Function | Description |
+|----------|-------------|
+| `initRDR()` | Initialize. Safe to call multiple times. |
+| `rdr.reqHandler(payload)` | Pass an API request. `{ s, m, p?, b? }` |
+| `rdr.resetTiming()` | Reset timer (SPA route change) |
+| `rdr.resetActions()` | Clear action buffer |
+| `rdr.destroy()` | Stop timers, flush, clean up |
 
 ### RT
 
-| Функция | Описание |
-|---------|----------|
-| `initRT()` | Включить модуль (dev-only) |
-| `rt.startTransition(pathname, search)` | Начать отсчёт перехода (pre-render) |
-| `rt.markRendered(pathname)` | Отметить рендер маршрута (post-render) |
-| `trackCritical(promise?)` | Отслеживать критическую async-операцию |
-| `rt.destroy()` | Очистка |
+| Function | Description |
+|----------|-------------|
+| `initRT()` | Enable module (dev-only) |
+| `rt.startTransition(pathname, search)` | Start transition timing (pre-render) |
+| `rt.markRendered(pathname)` | Mark route render (post-render) |
+| `trackCritical(promise?)` | Track a critical async operation |
+| `rt.destroy()` | Clean up |
 
 ### observeHistory
 
-| Функция | Описание |
-|---------|----------|
-| `observeHistory(history)` | Создать observer (idempotent через WeakMap) |
-| `observer.subscribe(listener)` | Подписка на `INIT/PUSH/REPLACE/POP`. Возвращает `unsubscribe` |
-| `observer.unpatch()` | Снять патч, очистить |
+| Function | Description |
+|----------|-------------|
+| `observeHistory(history)` | Create observer (idempotent via WeakMap) |
+| `observer.subscribe(listener)` | Subscribe to `INIT/PUSH/REPLACE/POP`. Returns `unsubscribe` |
+| `observer.unpatch()` | Remove patch, clean up |
 
 ### RouteTracker (`cosmic-eye/react`)
 
-| Prop | Тип | Описание |
-|------|-----|----------|
-| `children` | `ReactNode` | Дочерние элементы |
-| `onRouteChange` | `Array<(pathname, search) => void>` | Колбэки на смену маршрута |
+| Prop | Type | Description |
+|------|------|-------------|
+| `children` | `ReactNode` | Child elements |
+| `onRouteChange` | `Array<(pathname, search) => void>` | Callbacks on route change |
 
-See [docs/rdr/EVENT_SCHEMA.md](docs/rdr/EVENT_SCHEMA.md) and [docs/rt/EVENT_SCHEMA.md](docs/rt/EVENT_SCHEMA.md) for log schemas.
+See [src/rdr/README.md](src/rdr/README.md) and [src/rt/README.md](src/rt/README.md) for log schemas and configuration reference.
 
-## Структура проекта
+## Project structure
 
 ```
 src/
-  index.ts              — публичный API (только реэкспорты, без React)
-  react.ts              — точка входа React-расширений (cosmic-eye/react)
-  rdr/                  — модуль RDR: детект дубликатов запросов
-  rt/                   — модуль RT: метрики переходов между маршрутами
+  index.ts              — public API (re-exports only, no React)
+  react.ts              — React extensions entry point (cosmic-eye/react)
+  rdr/                  — RDR module: duplicate request detection
+  rt/                   — RT module: route transition metrics
   extensions/
-    history-route-observer/ — observer навигации (pre-render)
-    route-tracker/      — RouteTracker React-компонент (post-render)
+    history-route-observer/ — navigation observer (pre-render)
+    route-tracker/      — RouteTracker React component (post-render)
 tests/
-  rdr/                  — тесты RDR (49)
-  rt/                   — тесты RT (19)
-  extensions/           — тесты расширений (32)
-docs/
-  rdr/                  — CONFIG, EVENT_SCHEMA, INTEGRATION для RDR
-  rt/                   — CONFIG, EVENT_SCHEMA, INTEGRATION для RT
-  checklists/           — чек-листы обновлений и релизов
-  best-practices/       — политики: SemVer, тесты, документация
-  agent/                — инструкции для AI-агента
+  rdr/                  — RDR tests (49)
+  rt/                   — RT tests (19)
+  extensions/           — extension tests (32)
+```
 
-## Команды тестов
+## Test commands
 
-| Команда | Область |
-|---------|--------|
-| `npm run test` | все тесты |
-| `npm run test:rdr` | только RDR |
-| `npm run test:rt` | только RT |
-| `npm run test:extensions` | только extensions |
-| `npm run test:watch` | все, watch-режим |
+| Command | Scope |
+|---------|-------|
+| `npm run test` | all tests |
+| `npm run test:rdr` | RDR only |
+| `npm run test:rt` | RT only |
+| `npm run test:extensions` | extensions only |
+| `npm run test:watch` | all, watch mode |
 
-## Документация
+## Documentation
 
-### RDR
-- [docs/rdr/CONFIG.md](docs/rdr/CONFIG.md) — справочник конфигурации
-- [docs/rdr/EVENT_SCHEMA.md](docs/rdr/EVENT_SCHEMA.md) — схема LogEntry
-- [docs/rdr/INTEGRATION.md](docs/rdr/INTEGRATION.md) — руководство по интеграции
+Each module has its own README with integration guide, configuration reference, and event schema:
 
-### RT
-- [docs/rt/CONFIG.md](docs/rt/CONFIG.md) — справочник конфигурации
-- [docs/rt/EVENT_SCHEMA.md](docs/rt/EVENT_SCHEMA.md) — схема RTLogEntry
-- [docs/rt/INTEGRATION.md](docs/rt/INTEGRATION.md) — руководство по интеграции
-
-### Общее
-- [CHANGELOG.md](CHANGELOG.md) — история изменений
+- [src/rdr/README.md](src/rdr/README.md) — RDR documentation
+- [src/rt/README.md](src/rt/README.md) — RT documentation
+- [src/extensions/history-route-observer/README.md](src/extensions/history-route-observer/README.md) — observer documentation
+- [src/extensions/route-tracker/README.md](src/extensions/route-tracker/README.md) — RouteTracker documentation
+- [CHANGELOG.md](CHANGELOG.md) — change history
 
 ## License
 

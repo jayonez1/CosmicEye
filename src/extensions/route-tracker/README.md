@@ -1,13 +1,13 @@
 # RouteTracker
 
-React-компонент для **post-render** отслеживания смены маршрутов в SPA.
+React component for **post-render** route change tracking in SPAs.
 
-## Назначение
+## Purpose
 
-`RouteTracker` — «глупый» провайдер. Он **не знает** о RDR, RT или других модулях.
-Его единственная задача: обнаружить смену `pathname` через `useLocation()` и вызвать зарегистрированные колбэки **после** React commit.
+`RouteTracker` is a "dumb" provider. It has **no knowledge** of RDR, RT, or any other module.
+Its only job: detect `pathname` changes via `useLocation()` and call registered callbacks **after** React commit.
 
-> **Pre-render** события навигации (до рендера) обрабатываются через `observeHistory` — отдельный extension. RouteTracker предназначен для **post-render** колбэков, таких как `rt.markRendered()`.
+> **Pre-render** navigation events (before render) are handled via `observeHistory` — a separate extension. RouteTracker is intended for **post-render** callbacks such as `rt.markRendered()`.
 
 ## API
 
@@ -21,20 +21,20 @@ import { RouteTracker } from 'cosmic-eye/react';
 
 ### Props
 
-| Prop | Тип | Описание |
-|------|-----|----------|
-| `children` | `ReactNode` | Дочерние элементы (обычно `<Switch>` / `<Routes>`) |
-| `onRouteChange` | `Array<(pathname, search) => void>` | Колбэки, вызываемые при смене маршрута |
+| Prop | Type | Description |
+|------|------|-------------|
+| `children` | `ReactNode` | Child elements (typically `<Switch>` / `<Routes>`) |
+| `onRouteChange` | `Array<(pathname, search) => void>` | Callbacks invoked on route change |
 
-### Поведение
+### Behavior
 
-- Колбэки вызываются из `useLayoutEffect` — **после** commit фазы React.
-- Вызываются при **каждой** смене `pathname`, включая первый рендер.
-- Изменения `search` при том же `pathname` **не** вызывают колбэки (передаются как аргумент).
-- Каждый колбэк обёрнут в `try/catch` — ошибка в одном не блокирует остальные.
-- Используется `ref` для колбэков — изменение массива не вызывает лишних перерендеров.
+- Callbacks fire from `useLayoutEffect` — **after** React commit phase.
+- Called on **every** `pathname` change, including the initial mount.
+- Changes to `search` with the same `pathname` do **not** trigger callbacks (passed as argument).
+- Each callback is wrapped in `try/catch` — an error in one does not block others.
+- A `ref` is used for callbacks — changing the array does not cause unnecessary re-renders.
 
-## Пример интеграции
+## Integration example
 
 ```tsx
 import { rt } from 'cosmic-eye';
@@ -53,7 +53,7 @@ import { RouteTracker } from 'cosmic-eye/react';
 </Router>
 ```
 
-> **Для pre-render reset** (RDR `resetTiming`, RT `startTransition`) используйте `observeHistory`:
+> **For pre-render reset** (RDR `resetTiming`, RT `startTransition`) use `observeHistory`:
 > ```ts
 > import { observeHistory, rt } from 'cosmic-eye';
 > const observer = observeHistory(history);
@@ -64,7 +64,7 @@ import { RouteTracker } from 'cosmic-eye/react';
 > });
 > ```
 
-## Требования
+## Requirements
 
-- `react` >= 16.8.0 (хуки)
+- `react` >= 16.8.0 (hooks)
 - `react-router-dom` >= 5.0.0 (`useLocation`)

@@ -4,27 +4,27 @@
 
 ### Added
 
-- **[extensions]** Новый модуль `history-route-observer` — нейтральный observer навигации через history API.
-- **[extensions]** `observeHistory(history)` — возвращает idempotent observer (WeakMap по объекту history).
-- **[extensions]** `observer.subscribe(listener)` — подписка на события `INIT`, `PUSH`, `REPLACE`, `POP`.
-- **[extensions]** `observer.unpatch()` — снятие патча, восстановление оригинальных методов, очистка.
-- **[extensions]** Типы: `NavigationEvent`, `NavigationListener`, `NavigationAction`, `HistoryRouteObserver`, `HistoryLike`, `HistoryLocation`.
-- Тесты observer: 21 тест (INIT, PUSH, REPLACE, POP v4/v5, idempotency, unpatch, subscribe/unsubscribe).
-- Тесты RDR pre-render reset через observer: 5 тестов.
+- **[extensions]** New `history-route-observer` module — neutral navigation observer via history API.
+- **[extensions]** `observeHistory(history)` — returns an idempotent observer (WeakMap keyed by history object).
+- **[extensions]** `observer.subscribe(listener)` — subscribe to `INIT`, `PUSH`, `REPLACE`, `POP` events.
+- **[extensions]** `observer.unpatch()` — removes patch, restores original methods, cleans up.
+- **[extensions]** Types: `NavigationEvent`, `NavigationListener`, `NavigationAction`, `HistoryRouteObserver`, `HistoryLike`, `HistoryLocation`.
+- Observer tests: 21 tests (INIT, PUSH, REPLACE, POP v4/v5, idempotency, unpatch, subscribe/unsubscribe).
+- RDR pre-render reset via observer tests: 5 tests.
 
 ### Changed
 
-- **[rt] BREAKING**: Удалён `patchHistory` из RT. Используйте `observeHistory` + `observer.subscribe()`.
-- **[rt]** Удалены типы `HistoryLike`, `HistoryLocation` из `src/rt/types.ts` — перемещены в observer.
-- **[extensions]** `RouteTracker` теперь позиционируется как **post-render** провайдер. Pre-render логика — через `observeHistory`.
-- **[docs]** `docs/rt/INTEGRATION.md` — архитектура pre-render/post-render, миграция с v0.2.0.
-- **[docs]** `docs/rdr/INTEGRATION.md` — рекомендуемый pre-render reset через observer.
-- **[docs]** `src/extensions/route-tracker/README.md` — RouteTracker как post-render only.
+- **[rt] BREAKING**: Removed `patchHistory` from RT. Use `observeHistory` + `observer.subscribe()`.
+- **[rt]** Removed types `HistoryLike`, `HistoryLocation` from `src/rt/types.ts` — moved to observer.
+- **[extensions]** `RouteTracker` is now positioned as a **post-render** provider. Pre-render logic uses `observeHistory`.
+- **[docs]** RT integration guide — pre-render/post-render architecture, migration from v0.2.0.
+- **[docs]** RDR integration guide — recommended pre-render reset via observer.
+- **[docs]** RouteTracker README — post-render only positioning.
 
 ### Removed
 
-- **[rt]** `patchHistory` — заменён на `observeHistory` из extensions.
-- **[rt]** `parseHistoryArgs` — внутренний helper, перенесён в observer как `parseLocation`.
+- **[rt]** `patchHistory` — replaced by `observeHistory` from extensions.
+- **[rt]** `parseHistoryArgs` — internal helper, moved to observer as `parseLocation`.
 
 ### Migration
 
@@ -42,28 +42,28 @@
 
 ### Added
 
-- **[rt]** Новый модуль RT (Route Transition Metrics) — измерение времени переходов между маршрутами в SPA.
-- **[rt]** `initRT()`, `patchHistory(history)`, `trackCritical(promise?)` — публичный API модуля RT.
-- **[rt]** Поддержка history v4 и v5 в `patchHistory`.
-- **[extensions]** `RouteTracker` — «глупый» React-компонент для отслеживания смены маршрутов. Вызывает массив колбэков `onRouteChange` при смене `pathname`.
-- **[extensions]** Отдельная точка входа `cosmic-eye/react` для React-расширений (не требует React для основного импорта).
-- Именованные экспорты `rdr` и `rt` из корневого модуля.
-- `RDR_VERSION` и `RT_VERSION` экспорты (версии схем логов).
-- npm-скрипты: `test:rt`, `test:watch:rt`.
-- Документация: `docs/rdr/`, `docs/rt/`, `docs/extensions/`.
+- **[rt]** New RT module (Route Transition Metrics) — SPA route transition timing.
+- **[rt]** `initRT()`, `patchHistory(history)`, `trackCritical(promise?)` — RT public API.
+- **[rt]** Support for history v4 and v5 in `patchHistory`.
+- **[extensions]** `RouteTracker` — "dumb" React component for route change tracking. Calls `onRouteChange` callbacks on `pathname` change.
+- **[extensions]** Separate entry point `cosmic-eye/react` for React extensions (no React required for main import).
+- Named exports `rdr` and `rt` from root module.
+- `RDR_VERSION` and `RT_VERSION` exports (log schema versions).
+- npm scripts: `test:rt`, `test:watch:rt`.
+- Documentation: per-module docs directories.
 
 ### Changed
 
-- **[rdr]** `VERSION` изменён на формат `MAJOR.MINOR` (`'0.1'`). Это версия схемы логов, **не** версия пакета.
-- **[rdr]** Удалён экспорт `VERSION` — заменён на `RDR_VERSION`.
-- Документация каждого модуля перенесена в отдельные директории: `docs/rdr/`, `docs/rt/`.
-- `package.json`: версия пакета `0.2.0`, добавлены `peerDependencies` (react, react-dom, react-router-dom — optional).
-- `tsup.config.ts`: два entry point (`index.ts`, `react.ts`).
-- `tsconfig.json`: добавлена поддержка JSX (`react-jsx`).
+- **[rdr]** `VERSION` changed to `MAJOR.MINOR` format (`'0.1'`). This is the log schema version, **not** the package version.
+- **[rdr]** Removed `VERSION` export — replaced with `RDR_VERSION`.
+- Per-module documentation moved to separate directories.
+- `package.json`: package version `0.2.0`, added `peerDependencies` (react, react-dom, react-router-dom — optional).
+- `tsup.config.ts`: two entry points (`index.ts`, `react.ts`).
+- `tsconfig.json`: added JSX support (`react-jsx`).
 
 ### Fixed
 
-- **[rt]** Исправлен баг falsy-zero: `renderedAt` и `interactiveAt` корректно обрабатываются при значении `0` (использование `!== null` вместо truthy-проверки).
+- **[rt]** Fixed falsy-zero bug: `renderedAt` and `interactiveAt` correctly handled when value is `0` (using `!== null` instead of truthy check).
 
 ## 0.1.0
 

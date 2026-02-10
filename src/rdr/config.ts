@@ -8,21 +8,21 @@ export const SAMPLING = {
 } as const;
 
 export const TIMINGS = {
-  DUPLICATE_THRESHOLD_MS: 1000,
-  CLEANUP_INTERVAL_MS: 10000,
+  DUPLICATE_THRESHOLD_MS: 1_000,
+  CLEANUP_INTERVAL_MS: 10_000,
 } as const;
 
 export const FLUSH = {
-  INTERVAL_MS: 15000,
+  INTERVAL_MS: 15_000,
   MAX_EVENTS: 50,
 } as const;
 
 export const HASH_LIMITS = {
   MAX_DEPTH: 20,
-  MAX_NODES: 5000,
+  MAX_NODES: 5_000,
   MAX_OBJECT_KEYS: 300,
-  MAX_ARRAY_ITEMS: 1000,
-  MAX_STRING_CHARS: 2048,
+  MAX_ARRAY_ITEMS: 1_000,
+  MAX_STRING_CHARS: 2_048,
 } as const;
 
 export const ACTIONS = {
