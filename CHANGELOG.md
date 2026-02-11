@@ -1,5 +1,79 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- **[shared]** New `src/shared/` layer with extracted common utilities: time, env, sampling, hash, generate-id, enrichers, chrome-ext.
+- **[rdr]** `init(config?)` now accepts optional `RdrConfig` and returns `boolean`.
+- **[rdr]** `isInitialized()` public method.
+- **[rdr]** All public methods return typed result objects with `initialized` field.
+- **[rdr]** `flush(trigger?, meta?)` public manual flush with trigger name and metadata.
+- **[rdr]** `reqHandlerRpc(payload)` for RPC-style requests.
+- **[rdr]** `reqHandlerHttp(payload)` for HTTP-style requests (`httpMethod`, `endpoint`, `bodyText`).
+- **[rdr]** Configurable `send` function for custom transport. Falls back to `console.log`.
+- **[rdr]** `enrichers` config option: sync getters called during payload formation with error handling.
+- **[rdr]** `tag` config option: custom metric tag added to every log entry.
+- **[rdr]** `chromeExtensionEvents` config option: dispatches `CustomEvent('rdr', ...)`.
+- **[rdr]** `rpcKeyFactory` / `httpKeyFactory` config options for custom request key factories.
+- **[rdr]** Config-driven `hashLimits`, `actionsBufferMaxSize`, `actionsTrackedEvents`.
+- **[rt]** `init(config?)` now accepts optional `RtConfig` and returns `boolean`.
+- **[rt]** `isInitialized()` public method.
+- **[rt]** All public methods return typed result objects with `initialized` field.
+- **[rt]** `abortPending(reason?)` to abort active transition and send abort event.
+- **[rt]** `includePathname` / `includeSearch` config options (default: `false`).
+- **[rt]** Configurable `send` function for custom transport. Falls back to `console.log`.
+- **[rt]** `enrichers`, `tag`, `chromeExtensionEvents` config options (same as RDR).
+- **[extensions]** New `mobxSpy` extension: MobX spy integration with buffered actions/reactions. No-op if MobX absent.
+- **[extensions]** `mobxSpy.init(config?)`, `mobxSpy.reset()`, `mobxSpy.snapshot(nowMs?)`, `mobxSpy.destroy()`.
+- **[shared]** `makeHttpRequestKey(payload)` for HTTP request fingerprinting.
+- **[shared]** `collectEnrichers(enrichers, limits)` with truncation and error resilience.
+- **[shared]** `dispatchExtensionEvent(name, type, data)` for Chrome extension integration.
+- New types: `RdrConfig`, `RtConfig`, `RdrFlushPayload`, `RdrSendFn`, `RtSendFn`, `RtEventPayload`, `Enricher`, `EnricherLimitsConfig`, `MobxSpySnapshot`, `MobxSpyConfig`, and all result types.
+
+### Changed
+
+- **[rdr] BREAKING**: `initRDR()` now returns `boolean` (was `void`).
+- **[rdr] BREAKING**: `reqHandler` is now a deprecated alias for `reqHandlerRpc`.
+- **[rdr] BREAKING**: `destroy()`, `resetTiming()`, `resetActions()` now return result objects (were `void`).
+- **[rdr]** `RTLogEntry.pathname` is now optional (only included when `includePathname: true`).
+- **[rt] BREAKING**: `initRT()` now returns `boolean` (was `void`).
+- **[rt] BREAKING**: `startTransition()`, `markRendered()`, `trackCritical()`, `destroy()` now return result objects.
+- **[rt] BREAKING**: `trackCritical()` returns `RtTrackCriticalResult` object with `done` property (was `(() => void) | undefined`).
+- **[rt]** `pathname` and `search` are no longer included in RT payload by default.
+- **[shared]** Sampling is now fully config-driven via `samplingRate`, `samplingStorageKey`, `clientId`.
+
+### Removed
+
+- **[rdr]** `IS_DEV` check. Behavior is now fully config-driven.
+- **[rt]** `IS_DEV` check. Behavior is now fully config-driven.
+- **[rdr]** `_resetSamplingState()` export (sampling is now stateless per-call).
+- **[rdr]** `SAMPLING`, `TIMINGS`, `FLUSH`, `ACTIONS`, `CHROME_EXT` config groups replaced by flat `DEFAULTS` object.
+
+### Migration
+
+```diff
+- import { initRDR } from 'cosmic-eye';
+- initRDR();
++ const ok = initRDR({ samplingRate: 0.05 });
+
+- rdr.reqHandler(payload);
++ rdr.reqHandlerRpc(payload);
+
+- rdr.destroy();
++ const { destroyed } = rdr.destroy();
+
+- import { initRT } from 'cosmic-eye';
+- initRT();
++ const ok = initRT({ send: myTransport, includePathname: true });
+
+- const done = rt.trackCritical();
++ const { done } = rt.trackCritical();
+
+- import { makeRequestKey } from 'cosmic-eye';
++ import { makeRpcRequestKey } from 'cosmic-eye';
+```
+
 ## 0.4.0
 
 ### Added

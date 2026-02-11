@@ -1,7 +1,7 @@
 import { NORMALIZE_ID_REGEX } from './config';
 
-export const nowMs = (): number =>
-  typeof performance !== 'undefined' ? performance.now() : Date.now();
+export { nowMs } from '../shared/time';
+export { generateId } from '../shared/generate-id';
 
 export const normalizeRoute = (pathname: string): string =>
   pathname ? pathname.replace(NORMALIZE_ID_REGEX, '/:id') : '/';
@@ -26,8 +26,3 @@ export const whenIdle = (callback: () => void, timeout: number): void => {
     setTimeout(callback, 0);
   }
 };
-
-export const generateId = (): string =>
-  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random()}`;

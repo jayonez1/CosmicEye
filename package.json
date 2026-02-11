@@ -1,6 +1,6 @@
 {
   "name": "cosmic-eye",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "RDR (RUM Duplicate Requests) — detects and logs duplicate API requests in SPAs",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -69,12 +69,14 @@
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "react-router-dom": ">=5.0.0"
+    "react-router-dom": ">=5.0.0",
+    "mobx": ">=5.0.0"
   },
   "peerDependenciesMeta": {
     "react": { "optional": true },
     "react-dom": { "optional": true },
-    "react-router-dom": { "optional": true }
+    "react-router-dom": { "optional": true },
+    "mobx": { "optional": true }
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",

@@ -1,5 +1,12 @@
-import { HASH_LIMITS } from './config';
 import type { HashLimitsConfig, RequestKeyResult, StructuredHashResult } from './types';
+
+export const DEFAULT_HASH_LIMITS: HashLimitsConfig = {
+  MAX_DEPTH: 20,
+  MAX_NODES: 5_000,
+  MAX_OBJECT_KEYS: 300,
+  MAX_ARRAY_ITEMS: 1_000,
+  MAX_STRING_CHARS: 2_048,
+} as const;
 
 const HASH_SEED = 0x811c9dc5;
 const HASH_PRIME = 0x01000193;
@@ -33,7 +40,7 @@ export const hashText = (text: string): string => {
 
 export const hashStructuredData = (
   input: unknown,
-  limits: HashLimitsConfig = HASH_LIMITS,
+  limits: HashLimitsConfig = DEFAULT_HASH_LIMITS,
 ): StructuredHashResult => {
   const pathObjects = new WeakSet();
   const hasher = _makeHasher();
@@ -214,9 +221,13 @@ export const hashStructuredData = (
   };
 };
 
-export const makeRequestKey = (
+/**
+ * Generate a request fingerprint for RPC-style requests (service + method + params + body).
+ * Renamed from the former `makeRequestKey`.
+ */
+export const makeRpcRequestKey = (
   apiMessage: { s?: string; m?: string; p?: unknown; b?: unknown },
-  limits: HashLimitsConfig = HASH_LIMITS,
+  limits: HashLimitsConfig = DEFAULT_HASH_LIMITS,
 ): RequestKeyResult => {
   const serviceName = String(apiMessage?.s ?? '');
   const methodName = String(apiMessage?.m ?? '');
@@ -230,5 +241,37 @@ export const makeRequestKey = (
   return {
     endpoint,
     reqHash: `req_${endpointHash}_${paramsHash.hashHex}_${bodyHash.hashHex}_${truncationMask}`,
+  };
+};
+
+/** @deprecated Use `makeRpcRequestKey` instead. Will be removed in a future version. */
+export const makeRequestKey = makeRpcRequestKey;
+
+/**
+ * Generate a request fingerprint for HTTP-style requests (method + endpoint URL + body text).
+ * httpMethod is included in the hash to avoid false collisions (e.g. GET vs POST to same URL).
+ */
+export const makeHttpRequestKey = (
+  request: { httpMethod: string; endpoint: string; bodyText?: string },
+  limits: HashLimitsConfig = DEFAULT_HASH_LIMITS,
+): RequestKeyResult => {
+  const method = String(request.httpMethod ?? '').toUpperCase();
+  const endpoint = String(request.endpoint ?? '');
+  const bodyText = String(request.bodyText ?? '');
+
+  const endpointWithMethod = `${method}:${endpoint}`;
+  const endpointHash = hashText(endpointWithMethod);
+
+  const truncatedBody = bodyText.length > limits.MAX_STRING_CHARS
+    ? bodyText.slice(0, limits.MAX_STRING_CHARS)
+    : bodyText;
+  const bodyHash = hashText(truncatedBody);
+  const wasTruncated = bodyText.length > limits.MAX_STRING_CHARS;
+
+  const truncationMask = wasTruncated ? 2 : 0;
+
+  return {
+    endpoint: endpointWithMethod,
+    reqHash: `req_${endpointHash}_${bodyHash}_${truncationMask}`,
   };
 };

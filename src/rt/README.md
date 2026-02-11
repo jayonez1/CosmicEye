@@ -1,22 +1,10 @@
 # RT — Route Transition Metrics
 
-Measures SPA route transition timing: render time (`routeRenderMs`) and Time To Interactive (`routeTtiMs`). Dev-only module — does not activate in production.
+Measures SPA route transition timing: render time (`routeRenderMs`) and Time To Interactive (`routeTtiMs`). Activation is controlled via config — no implicit dev/production branching.
 
 ## Integration
 
-### Prerequisites
-
-- SPA with React Router (v5 or v6)
-- npm or compatible package manager
-- `react` >= 16.8.0
-- `react-router-dom` >= 5.0.0
-
 ### Architecture: pre-render vs post-render
-
-RT measures two moments of each transition:
-
-1. **Pre-render** — navigation start (`startTransition`). Happens **before** React render, via `observeHistory`.
-2. **Post-render** — render completion (`markRendered`). Happens **after** React commit, via `RouteRenderObserver`.
 
 ```
 history.push('/page')
@@ -40,19 +28,21 @@ import { createBrowserHistory } from 'history';
 
 const history = createBrowserHistory();
 
-// Enable RT module (dev only)
-initRT();
+const ok = initRT({
+  samplingRate: 1,
+  send: (payload) => myAnalytics.send('rt', payload),
+  includePathname: true,
+  tag: 'my-app',
+});
+// ok === true if initialized, false if sampling excluded
 
-// Connect observer — pre-render navigation source
 const observer = observeHistory(history);
 observer.subscribe(({ pathname, search }) => {
   rt.startTransition(pathname, search);
 });
 ```
 
-- `initRT()` is safe to call multiple times — subsequent calls are no-ops.
-- In production (`NODE_ENV=production`) the module does not activate.
-- `observeHistory` is idempotent — calling again with the same `history` returns the same observer.
+`initRT()` returns `boolean`. Subsequent calls return `true` (already initialized).
 
 ### Step 3: Connect RouteRenderObserver (post-render)
 
@@ -60,174 +50,99 @@ observer.subscribe(({ pathname, search }) => {
 import { RouteRenderObserver } from 'cosmic-eye/react';
 import { rt } from 'cosmic-eye';
 
-<Router history={history}>
-  <RouteRenderObserver
-    onRouteChange={[
-      (pathname) => { rt.markRendered(pathname); },
-    ]}
-  >
-    <Switch>
-      <Route path="/home" component={Home} />
-    </Switch>
-  </RouteRenderObserver>
-</Router>
+<RouteRenderObserver
+  onRouteChange={[(pathname) => { rt.markRendered(pathname); }]}
+>
+  {children}
+</RouteRenderObserver>
 ```
 
-`RouteRenderObserver` fires **after** React commit (`useLayoutEffect`) — this records the render moment.
-
 ### Step 4: Track critical operations (optional)
-
-If a page loads data without which it is not considered interactive:
 
 ```ts
 import { trackCritical } from 'cosmic-eye';
 
 // Option 1: with Promise
-await trackCritical(fetchData());
+const result = rt.trackCritical(fetchData());
+// result: { initialized, tracked }
 
 // Option 2: manual control
-const done = trackCritical();
+const { done } = rt.trackCritical();
 await fetchData();
-done();
+done!();
 ```
 
-TTI will not be recorded until all critical operations complete.
-
-### Step 5: Cleanup (optional)
+### Step 5: Abort pending transition (optional)
 
 ```ts
-import { rt } from 'cosmic-eye';
-
-observer.unpatch(); // removes history patch
-rt.destroy();       // clears RT state
+rt.abortPending('user-navigated-away');
+// returns { initialized, aborted }
 ```
 
-### Migration from v0.2.0
+### Step 6: Cleanup (optional)
 
-```diff
-- import { initRT, patchHistory } from 'cosmic-eye';
-- patchHistory(history);
-+ import { initRT, rt, observeHistory } from 'cosmic-eye';
-+ const observer = observeHistory(history);
-+ observer.subscribe(({ pathname, search }) => {
-+   rt.startTransition(pathname, search);
-+ });
+```ts
+observer.unpatch();
+rt.destroy();
+// returns { initialized: false, destroyed: true }
 ```
-
-### Notes
-
-- **Dev-only**: RT only works when `NODE_ENV !== 'production'`.
-- **Flush destination**: metrics are sent to `console.log`. A pluggable transport will be added later.
-- **Normalization**: `/users/123` → `/users/:id` for metric aggregation.
-- **Without RouteRenderObserver**: RT will time out after 20s (expected — `markRendered` not called).
 
 ---
 
-## Configuration Reference
+## API Reference
 
-All configuration constants are defined in `src/rt/config.ts`.
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `init(config?)` | `boolean` | Initialize with optional config. Returns `true` if active. |
+| `isInitialized()` | `boolean` | Check if RT is currently active. |
+| `startTransition(pathname, search?)` | `RtStartTransitionResult` | Start tracking a route transition. |
+| `markRendered(pathname)` | `RtMarkRenderedResult` | Mark render completion for matching pathname. |
+| `trackCritical(promise?)` | `RtTrackCriticalResult` | Track a critical operation. Returns `done` for manual mode. |
+| `abortPending(reason?)` | `RtAbortPendingResult` | Abort current transition and send abort event. |
+| `destroy()` | `RtDestroyResult` | Clear state and timers. |
 
-### `VERSION`
+All public methods return **result objects** with an `initialized` field.
 
-| Value | Description |
-|-------|-------------|
-| `'0.1'` | RT log schema version (`MAJOR.MINOR` format). **Not** the package version. |
+---
 
-### `IS_DEV`
+## Configuration — `RtConfig`
 
-| Value | Description |
-|-------|-------------|
-| `process.env.NODE_ENV !== 'production'` | `true` in development, `false` in production. RT works **only** in dev mode. |
+All fields are optional. Defaults are applied for omitted fields.
 
-### `CRITICAL_TIMEOUT_MS`
-
-| Value | Description |
-|-------|-------------|
-| `20_000` | Max TTI wait time (ms). If transition doesn't complete within this time, an entry with `timedOut: true` is sent. |
-
-### `IDLE_TIMEOUT_MS`
-
-| Value | Description |
-|-------|-------------|
-| `1_500` | Timeout for `requestIdleCallback` (ms). If the browser doesn't become idle within this time, the callback fires forcefully. |
-
-### `RAF_COUNT`
-
-| Value | Description |
-|-------|-------------|
-| `2` | Number of `requestAnimationFrame` cycles after `markRendered` before checking idle. 2×rAF guarantees paint completion. |
-
-### `EVENT_NAME`
-
-| Value | Description |
-|-------|-------------|
-| `'cosmic_eye_route_transition'` | Event name used in `console.log` output. |
-
-### `NORMALIZE_ID_REGEX`
-
-| Value | Description |
-|-------|-------------|
-| `/\/\d+/g` | Regex for replacing numeric URL segments with `:id`. Example: `/users/123` → `/users/:id`. |
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `samplingRate` | `number` | `1` | Sampling rate (0..1). `1` = always enabled. |
+| `samplingStorageKey` | `string` | `'rum_rt_id'` | localStorage key for client ID. |
+| `clientId` | `string` | — | Explicit client ID (overrides localStorage). |
+| `criticalTimeoutMs` | `number` | `20_000` | Max TTI wait time (ms). |
+| `idleTimeoutMs` | `number` | `1_500` | `requestIdleCallback` timeout (ms). |
+| `rafCount` | `number` | `2` | rAF cycles before idle check. |
+| `includePathname` | `boolean` | `false` | Include `pathname` in payload. |
+| `includeSearch` | `boolean` | `false` | Include `search` in payload. |
+| `send` | `RtSendFn` | `console.log` | Custom send function. |
+| `enrichers` | `Enricher[]` | — | Sync getters for payload enrichment. |
+| `enricherLimits` | `Partial<EnricherLimitsConfig>` | — | Limits for enricher output. |
+| `tag` | `string` | — | Custom tag added to every log entry. |
+| `chromeExtensionEvents` | `boolean` | `false` | Dispatch `CustomEvent('rt', ...)` for Chrome extension. |
 
 ---
 
 ## Event Schema — RTLogEntry
 
-Each completed route transition creates one `RTLogEntry` object.
-
-### Fields
-
-#### `ver`
-
-Type: `string`
-
-RT log schema version (`MAJOR.MINOR` format). Distinguishes log formats between module versions.
-
-#### `id`
-
-Type: `string`
-
-Unique transition identifier (`crypto.randomUUID()` or fallback).
-
-#### `routeName`
-
-Type: `string`
-
-Normalized path. Numeric segments replaced with `:id`.
-Example: `/users/123` → `/users/:id`
-
-#### `pathname`
-
-Type: `string`
-
-Original path without normalization.
-
-#### `routeRenderMs`
-
-Type: `number | null`
-
-Milliseconds from navigation start to React component render completion (`useLayoutEffect`).
-`null` if render was not recorded (e.g. timeout without `markRendered`).
-
-#### `routeTtiMs`
-
-Type: `number | null`
-
-Time To Interactive — milliseconds from navigation start to full interactivity.
-Includes: render + 2×rAF + browser idle + critical operations completion.
-`null` if TTI was not recorded.
-
-#### `search` (optional)
-
-Type: `string`
-
-Query string, if present during navigation. Not included if empty.
-
-#### `timedOut` (optional)
-
-Type: `boolean`
-
-`true` if the transition didn't complete within `CRITICAL_TIMEOUT_MS` (20s) and was forcefully finalized.
+| Field | Type | Description |
+|-------|------|-------------|
+| `ver` | `string` | Schema version (`'0.1'`). |
+| `id` | `string` | Unique transition ID. |
+| `routeName` | `string` | Normalized path (`/users/:id`). |
+| `routeRenderMs` | `number \| null` | Render time (ms). `null` if not rendered. |
+| `routeTtiMs` | `number \| null` | TTI (ms). `null` if not measured. |
+| `pathname` | `string` (optional) | Original path. Only if `includePathname: true`. |
+| `search` | `string` (optional) | Query string. Only if `includeSearch: true`. |
+| `timedOut` | `boolean` (optional) | `true` if critical timeout expired. |
+| `aborted` | `boolean` (optional) | `true` if transition was aborted. |
+| `abortReason` | `string` (optional) | Reason passed to `abortPending()`. |
+| `tag` | `string` (optional) | Custom metric tag from config. |
+| `enrichments` | `Record<string, unknown>` (optional) | Enricher outputs. |
 
 ### Example
 
@@ -236,23 +151,24 @@ Type: `boolean`
   "ver": "0.1",
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "routeName": "/users/:id",
-  "pathname": "/users/123",
   "routeRenderMs": 45,
   "routeTtiMs": 120,
-  "search": "?tab=settings"
+  "pathname": "/users/123",
+  "search": "?tab=settings",
+  "tag": "my-app"
 }
 ```
 
-### Timeout example
+### Abort example
 
 ```json
 {
   "ver": "0.1",
   "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
   "routeName": "/reports/:id",
-  "pathname": "/reports/42",
   "routeRenderMs": null,
-  "routeTtiMs": 20000,
-  "timedOut": true
+  "routeTtiMs": null,
+  "aborted": true,
+  "abortReason": "user-navigated-away"
 }
 ```

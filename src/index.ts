@@ -2,18 +2,26 @@
 // NOTE: React extensions are in a separate entry point 'cosmic-eye/react'
 
 // === RDR ===
-export { initRDR, hashText, makeRequestKey } from './rdr';
+export { initRDR } from './rdr';
 export { default as rdr } from './rdr';
 
 export type {
+  RpcRequestPayload,
   ApiRequestPayload,
+  HttpRequestPayload,
+  RdrLogEntry,
   LogEntry,
-  RequestKeyResult,
-  StructuredHashResult,
-  HashLimitsConfig,
+  RdrFlushPayload,
+  RdrSendFn,
+  RdrKeyFactory,
+  RdrConfig,
+  RdrFlushResult,
+  RdrReqHandlerResult,
+  RdrResetTimingResult,
+  RdrResetActionsResult,
+  RdrDestroyResult,
   ActionData,
   ActionSnapshot,
-  EnvSnapshot,
 } from './rdr';
 
 // === RT ===
@@ -23,10 +31,30 @@ export { default as rt } from './rt';
 export type {
   Transition,
   RTLogEntry,
+  RtEventPayload,
+  RtSendFn,
+  RtConfig,
+  RtStartTransitionResult,
+  RtMarkRenderedResult,
+  RtTrackCriticalResult,
+  RtAbortPendingResult,
+  RtDestroyResult,
 } from './rt';
 
+// === Shared public utils ===
+export { hashText, makeRpcRequestKey, makeRequestKey, makeHttpRequestKey } from './shared/hash';
+
+export type {
+  RequestKeyResult,
+  StructuredHashResult,
+  HashLimitsConfig,
+  EnvSnapshot,
+  Enricher,
+  EnricherLimitsConfig,
+} from './shared/types';
+
 // === Extensions (non-React) ===
-export { observeHistory } from './extensions';
+export { observeHistory, mobxSpy } from './extensions';
 
 export type {
   HistoryLike,
@@ -35,4 +63,8 @@ export type {
   NavigationAction,
   NavigationEvent,
   NavigationListener,
+  MobxSpySnapshot,
+  MobxSpyConfig,
+  MobxActionEntry,
+  MobxReactionEntry,
 } from './extensions';

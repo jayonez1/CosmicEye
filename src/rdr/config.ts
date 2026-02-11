@@ -1,35 +1,19 @@
+/** Log schema version. NOT changeable via config — this is a contract. */
 export const VERSION = '0.1';
 
-export const IS_DEV = process.env.NODE_ENV !== 'production';
+/** Chrome extension event name for RDR. */
+export const CHROME_EXT_EVENT_NAME = 'rdr';
 
-export const SAMPLING = {
-  RATE: 0.05,
-  STORAGE_KEY: 'rum_user_id',
-} as const;
+// ─── Defaults (used when config does not override) ───
 
-export const TIMINGS = {
+export const DEFAULTS = {
+  SAMPLING_RATE: 1,
+  SAMPLING_STORAGE_KEY: 'rum_user_id',
   DUPLICATE_THRESHOLD_MS: 1_000,
   CLEANUP_INTERVAL_MS: 10_000,
-} as const;
-
-export const FLUSH = {
-  INTERVAL_MS: 15_000,
-  MAX_EVENTS: 50,
-} as const;
-
-export const HASH_LIMITS = {
-  MAX_DEPTH: 20,
-  MAX_NODES: 5_000,
-  MAX_OBJECT_KEYS: 300,
-  MAX_ARRAY_ITEMS: 1_000,
-  MAX_STRING_CHARS: 2_048,
-} as const;
-
-export const ACTIONS = {
-  BUFFER_MAX_SIZE: 3,
-  TRACKED_EVENTS: ['click', 'keydown', 'touchstart'] as readonly string[],
-} as const;
-
-export const CHROME_EXT = {
-  EVENT_NAME: '__RDR_LOG__',
+  FLUSH_INTERVAL_MS: 15_000,
+  FLUSH_MAX_EVENTS: 50,
+  HTTP_BODY_MAX_CHARS: 2_048,
+  ACTIONS_BUFFER_MAX_SIZE: 3,
+  ACTIONS_TRACKED_EVENTS: ['click', 'keydown', 'touchstart'] as readonly string[],
 } as const;

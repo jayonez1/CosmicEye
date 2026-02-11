@@ -1,10 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
 
-vi.mock('../../src/rdr/sampling', () => ({
-  shouldEnableSample: vi.fn(() => true),
-  _resetSamplingState: vi.fn(),
-}));
-
 let rdr: typeof import('../../src/rdr/index').default;
 let initRDR: typeof import('../../src/rdr/index').initRDR;
 let consoleSpy: MockInstance;
@@ -34,13 +29,11 @@ describe('Lifecycle flush', () => {
     initRDR();
     consoleSpy.mockClear();
 
-    // Create a duplicate
     const payload = { s: 'Svc', m: 'get', p: {}, b: {} };
-    rdr.reqHandler(payload);
+    rdr.reqHandlerRpc(payload);
     vi.advanceTimersByTime(50);
-    rdr.reqHandler(payload);
+    rdr.reqHandlerRpc(payload);
 
-    // Simulate visibilitychange to hidden
     Object.defineProperty(document, 'visibilityState', {
       value: 'hidden',
       writable: true,
@@ -54,7 +47,6 @@ describe('Lifecycle flush', () => {
     );
     expect(call).toBeDefined();
 
-    // Restore
     Object.defineProperty(document, 'visibilityState', {
       value: 'visible',
       writable: true,
@@ -66,13 +58,11 @@ describe('Lifecycle flush', () => {
     initRDR();
     consoleSpy.mockClear();
 
-    // Create a duplicate
     const payload = { s: 'Svc', m: 'get', p: {}, b: {} };
-    rdr.reqHandler(payload);
+    rdr.reqHandlerRpc(payload);
     vi.advanceTimersByTime(50);
-    rdr.reqHandler(payload);
+    rdr.reqHandlerRpc(payload);
 
-    // Simulate pagehide
     window.dispatchEvent(new Event('pagehide'));
 
     expect(consoleSpy).toHaveBeenCalled();
@@ -86,11 +76,10 @@ describe('Lifecycle flush', () => {
     initRDR();
     consoleSpy.mockClear();
 
-    // Create a duplicate
     const payload = { s: 'Svc', m: 'get', p: {}, b: {} };
-    rdr.reqHandler(payload);
+    rdr.reqHandlerRpc(payload);
     vi.advanceTimersByTime(50);
-    rdr.reqHandler(payload);
+    rdr.reqHandlerRpc(payload);
 
     rdr.destroy();
 

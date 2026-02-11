@@ -1,5 +1,5 @@
-import { ACTIONS } from './config';
-import { nowMs } from './utils';
+import { nowMs } from '../shared/time';
+import { DEFAULTS } from './config';
 import type { ActionData, ActionSnapshot } from './types';
 
 interface BufferEntry {
@@ -10,6 +10,8 @@ interface BufferEntry {
 
 const _buffer: BufferEntry[] = [];
 let _listenersAttached = false;
+let _bufferMaxSize: number = DEFAULTS.ACTIONS_BUFFER_MAX_SIZE;
+let _trackedEvents: readonly string[] = DEFAULTS.ACTIONS_TRACKED_EVENTS;
 
 const _getRumId = (target: EventTarget | null): string | null => {
   try {
@@ -31,7 +33,7 @@ const _reset = (): void => {
 
 const _onEvent = (e: Event): void => {
   try {
-    if (_buffer.length >= ACTIONS.BUFFER_MAX_SIZE) {
+    if (_buffer.length >= _bufferMaxSize) {
       _reset();
     }
 
@@ -46,13 +48,16 @@ const _onEvent = (e: Event): void => {
 };
 
 export const actions = {
-  init(): void {
+  init(bufferMaxSize?: number, trackedEvents?: string[]): void {
     if (_listenersAttached) {
       return;
     }
 
+    _bufferMaxSize = bufferMaxSize ?? DEFAULTS.ACTIONS_BUFFER_MAX_SIZE;
+    _trackedEvents = trackedEvents ?? DEFAULTS.ACTIONS_TRACKED_EVENTS;
+
     try {
-      for (const eventType of ACTIONS.TRACKED_EVENTS) {
+      for (const eventType of _trackedEvents) {
         window.addEventListener(eventType, _onEvent, { capture: true, passive: true });
       }
       _listenersAttached = true;
@@ -93,7 +98,7 @@ export const actions = {
     }
 
     try {
-      for (const eventType of ACTIONS.TRACKED_EVENTS) {
+      for (const eventType of _trackedEvents) {
         window.removeEventListener(eventType, _onEvent, { capture: true });
       }
       _listenersAttached = false;

@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { hashText, makeRequestKey, hashStructuredData } from '../../src/rdr/hash';
-import { HASH_LIMITS } from '../../src/rdr/config';
+import {
+  hashText,
+  makeRpcRequestKey,
+  makeRequestKey,
+  makeHttpRequestKey,
+  hashStructuredData,
+  DEFAULT_HASH_LIMITS,
+} from '../../src/shared/hash';
 
 describe('hashText', () => {
   it('returns deterministic hash for the same input', () => {
@@ -26,61 +32,97 @@ describe('hashText', () => {
   });
 });
 
-describe('makeRequestKey', () => {
+describe('makeRpcRequestKey', () => {
   it('produces identical reqHash for same params with different key order', () => {
-    const a = makeRequestKey({ s: 'Svc', m: 'get', p: { x: 1, y: 2 }, b: {} });
-    const b = makeRequestKey({ s: 'Svc', m: 'get', p: { y: 2, x: 1 }, b: {} });
+    const a = makeRpcRequestKey({ s: 'Svc', m: 'get', p: { x: 1, y: 2 }, b: {} });
+    const b = makeRpcRequestKey({ s: 'Svc', m: 'get', p: { y: 2, x: 1 }, b: {} });
     expect(a.reqHash).toBe(b.reqHash);
   });
 
   it('changes reqHash when service name changes', () => {
-    const a = makeRequestKey({ s: 'Svc', m: 'get', p: {}, b: {} });
-    const b = makeRequestKey({ s: 'Other', m: 'get', p: {}, b: {} });
+    const a = makeRpcRequestKey({ s: 'Svc', m: 'get', p: {}, b: {} });
+    const b = makeRpcRequestKey({ s: 'Other', m: 'get', p: {}, b: {} });
     expect(a.reqHash).not.toBe(b.reqHash);
   });
 
   it('changes reqHash when method name changes', () => {
-    const a = makeRequestKey({ s: 'Svc', m: 'get', p: {}, b: {} });
-    const b = makeRequestKey({ s: 'Svc', m: 'post', p: {}, b: {} });
+    const a = makeRpcRequestKey({ s: 'Svc', m: 'get', p: {}, b: {} });
+    const b = makeRpcRequestKey({ s: 'Svc', m: 'post', p: {}, b: {} });
     expect(a.reqHash).not.toBe(b.reqHash);
   });
 
   it('changes reqHash when params change', () => {
-    const a = makeRequestKey({ s: 'Svc', m: 'get', p: { id: 1 }, b: {} });
-    const b = makeRequestKey({ s: 'Svc', m: 'get', p: { id: 2 }, b: {} });
+    const a = makeRpcRequestKey({ s: 'Svc', m: 'get', p: { id: 1 }, b: {} });
+    const b = makeRpcRequestKey({ s: 'Svc', m: 'get', p: { id: 2 }, b: {} });
     expect(a.reqHash).not.toBe(b.reqHash);
   });
 
   it('changes reqHash when body changes', () => {
-    const a = makeRequestKey({ s: 'Svc', m: 'get', p: {}, b: { data: 'a' } });
-    const b = makeRequestKey({ s: 'Svc', m: 'get', p: {}, b: { data: 'b' } });
+    const a = makeRpcRequestKey({ s: 'Svc', m: 'get', p: {}, b: { data: 'a' } });
+    const b = makeRpcRequestKey({ s: 'Svc', m: 'get', p: {}, b: { data: 'b' } });
     expect(a.reqHash).not.toBe(b.reqHash);
   });
 
   it('returns correct endpoint format', () => {
-    const result = makeRequestKey({ s: 'UserService', m: 'getProfile', p: {}, b: {} });
+    const result = makeRpcRequestKey({ s: 'UserService', m: 'getProfile', p: {}, b: {} });
     expect(result.endpoint).toBe('UserService.getProfile');
   });
 
   it('returns reqHash with expected prefix format', () => {
-    const result = makeRequestKey({ s: 'Svc', m: 'get', p: {}, b: {} });
+    const result = makeRpcRequestKey({ s: 'Svc', m: 'get', p: {}, b: {} });
     expect(result.reqHash).toMatch(/^req_[0-9a-f]{8}_[0-9a-f]{8}_[0-9a-f]{8}_\d$/);
   });
 
   it('sets truncationMask when params exceed limits', () => {
-    const tinyLimits = { ...HASH_LIMITS, MAX_OBJECT_KEYS: 1 };
+    const tinyLimits = { ...DEFAULT_HASH_LIMITS, MAX_OBJECT_KEYS: 1 };
     const params = { a: 1, b: 2, c: 3 };
-    const result = makeRequestKey({ s: 'Svc', m: 'get', p: params, b: {} }, tinyLimits);
+    const result = makeRpcRequestKey({ s: 'Svc', m: 'get', p: params, b: {} }, tinyLimits);
     const mask = parseInt(result.reqHash.split('_').pop()!, 10);
     expect(mask & 1).toBe(1); // params truncated
   });
 
   it('sets truncationMask when body exceeds limits', () => {
-    const tinyLimits = { ...HASH_LIMITS, MAX_STRING_CHARS: 2 };
+    const tinyLimits = { ...DEFAULT_HASH_LIMITS, MAX_STRING_CHARS: 2 };
     const body = { longKey: 'a'.repeat(100) };
-    const result = makeRequestKey({ s: 'Svc', m: 'get', p: {}, b: body }, tinyLimits);
+    const result = makeRpcRequestKey({ s: 'Svc', m: 'get', p: {}, b: body }, tinyLimits);
     const mask = parseInt(result.reqHash.split('_').pop()!, 10);
     expect(mask & 2).toBe(2); // body truncated
+  });
+});
+
+describe('makeRequestKey (deprecated alias)', () => {
+  it('is the same function as makeRpcRequestKey', () => {
+    expect(makeRequestKey).toBe(makeRpcRequestKey);
+  });
+});
+
+describe('makeHttpRequestKey', () => {
+  it('returns deterministic hash for same request', () => {
+    const a = makeHttpRequestKey({ httpMethod: 'GET', endpoint: '/api/users' });
+    const b = makeHttpRequestKey({ httpMethod: 'GET', endpoint: '/api/users' });
+    expect(a.reqHash).toBe(b.reqHash);
+  });
+
+  it('includes httpMethod in hash — GET vs POST differ', () => {
+    const a = makeHttpRequestKey({ httpMethod: 'GET', endpoint: '/api/users' });
+    const b = makeHttpRequestKey({ httpMethod: 'POST', endpoint: '/api/users' });
+    expect(a.reqHash).not.toBe(b.reqHash);
+  });
+
+  it('includes body text in hash', () => {
+    const a = makeHttpRequestKey({ httpMethod: 'POST', endpoint: '/api', bodyText: '{"a":1}' });
+    const b = makeHttpRequestKey({ httpMethod: 'POST', endpoint: '/api', bodyText: '{"b":2}' });
+    expect(a.reqHash).not.toBe(b.reqHash);
+  });
+
+  it('returns endpoint as METHOD:URL', () => {
+    const result = makeHttpRequestKey({ httpMethod: 'GET', endpoint: '/api/users' });
+    expect(result.endpoint).toBe('GET:/api/users');
+  });
+
+  it('returns reqHash with expected prefix format', () => {
+    const result = makeHttpRequestKey({ httpMethod: 'GET', endpoint: '/api' });
+    expect(result.reqHash).toMatch(/^req_[0-9a-f]{8}_[0-9a-f]{8}_\d$/);
   });
 });
 
@@ -118,14 +160,14 @@ describe('hashStructuredData', () => {
   });
 
   it('truncates when maxNodes is exceeded', () => {
-    const tinyLimits = { ...HASH_LIMITS, MAX_NODES: 3 };
+    const tinyLimits = { ...DEFAULT_HASH_LIMITS, MAX_NODES: 3 };
     const data = { a: 1, b: 2, c: 3, d: 4, e: 5 };
     const result = hashStructuredData(data, tinyLimits);
     expect(result.wasTruncated).toBe(true);
   });
 
   it('truncates when maxDepth is exceeded', () => {
-    const tinyLimits = { ...HASH_LIMITS, MAX_DEPTH: 2 };
+    const tinyLimits = { ...DEFAULT_HASH_LIMITS, MAX_DEPTH: 2 };
     const data = { a: { b: { c: { d: 1 } } } };
     const result = hashStructuredData(data, tinyLimits);
     expect(result.wasTruncated).toBe(true);

@@ -1,20 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { shouldEnableSample, _resetSamplingState } from '../../src/rdr/sampling';
+import { shouldEnableSample } from '../../src/shared/sampling';
+
+const BASE_CONFIG = { rate: 0.05, storageKey: 'rum_user_id' };
 
 beforeEach(() => {
-  _resetSamplingState();
   localStorage.clear();
 });
 
 describe('shouldEnableSample', () => {
-  it('returns a stable boolean on repeated calls', () => {
-    const first = shouldEnableSample();
-    const second = shouldEnableSample();
-    expect(first).toBe(second);
+  it('returns true when rate >= 1', () => {
+    expect(shouldEnableSample({ ...BASE_CONFIG, rate: 1 })).toBe(true);
   });
 
-  it('returns a boolean', () => {
-    const result = shouldEnableSample();
+  it('returns false when rate <= 0', () => {
+    expect(shouldEnableSample({ ...BASE_CONFIG, rate: 0 })).toBe(false);
+  });
+
+  it('returns a boolean for fractional rate', () => {
+    const result = shouldEnableSample(BASE_CONFIG);
     expect(typeof result).toBe('boolean');
   });
 
@@ -22,43 +25,39 @@ describe('shouldEnableSample', () => {
     const origGetItem = localStorage.getItem;
     const origSetItem = localStorage.setItem;
 
-    localStorage.getItem = () => {
-      throw new Error('denied');
-    };
-    localStorage.setItem = () => {
-      throw new Error('denied');
-    };
+    localStorage.getItem = () => { throw new Error('denied'); };
+    localStorage.setItem = () => { throw new Error('denied'); };
 
-    _resetSamplingState();
-
-    expect(() => shouldEnableSample()).not.toThrow();
+    expect(() => shouldEnableSample(BASE_CONFIG)).not.toThrow();
 
     localStorage.getItem = origGetItem;
     localStorage.setItem = origSetItem;
   });
 
-  it('uses cached result on subsequent calls', () => {
+  it('produces deterministic result for explicit clientId', () => {
+    const config = { ...BASE_CONFIG, clientId: 'test-deterministic-id-12345' };
+    const result1 = shouldEnableSample(config);
+    const result2 = shouldEnableSample(config);
+    expect(result1).toBe(result2);
+  });
+
+  it('uses explicit clientId over localStorage', () => {
+    localStorage.setItem('rum_user_id', 'stored-id');
     const spy = vi.spyOn(Storage.prototype, 'getItem');
 
-    shouldEnableSample();
-    shouldEnableSample();
-    shouldEnableSample();
+    shouldEnableSample({ ...BASE_CONFIG, clientId: 'explicit-id' });
 
-    // getItem should be called at most once (caching kicks in)
-    expect(spy.mock.calls.length).toBeLessThanOrEqual(1);
+    // localStorage.getItem should NOT have been called
+    expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });
 
-  it('produces deterministic result for a known client ID', () => {
-    // Set a known client ID in localStorage
-    localStorage.setItem('rum_user_id', 'test-deterministic-id-12345');
-    _resetSamplingState();
-
-    const result1 = shouldEnableSample();
-    _resetSamplingState();
-
-    // Re-read with same localStorage value
-    const result2 = shouldEnableSample();
-    expect(result1).toBe(result2);
+  it('different clientIds can produce different sampling decisions', () => {
+    // With rate=0.5, different client IDs should eventually differ
+    const results = new Set<boolean>();
+    for (let i = 0; i < 100; i++) {
+      results.add(shouldEnableSample({ ...BASE_CONFIG, rate: 0.5, clientId: `client-${i}` }));
+    }
+    expect(results.size).toBe(2); // both true and false
   });
 });

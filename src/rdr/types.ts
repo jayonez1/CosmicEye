@@ -1,5 +1,25 @@
-/** Payload from an API request message (e.g. from window.postMessage). */
-export interface ApiRequestPayload {
+import type {
+  Enricher,
+  EnricherLimitsConfig,
+  EnvSnapshot,
+  HashLimitsConfig,
+  RequestKeyResult,
+} from '../shared/types';
+
+// Re-export shared types used by consumers
+export type {
+  EnvSnapshot,
+  HashLimitsConfig,
+  RequestKeyResult,
+  StructuredHashResult,
+  Enricher,
+  EnricherLimitsConfig,
+} from '../shared/types';
+
+// ─── RPC payload ───
+
+/** Payload from an RPC-style API request message (e.g. from window.postMessage). */
+export interface RpcRequestPayload {
   /** Service name */
   s?: string;
   /** Method name */
@@ -14,27 +34,22 @@ export interface ApiRequestPayload {
   t?: number;
 }
 
-/** Result of makeRequestKey — identifies a unique request. */
-export interface RequestKeyResult {
+/** @deprecated Use RpcRequestPayload instead. */
+export type ApiRequestPayload = RpcRequestPayload;
+
+// ─── HTTP payload ───
+
+/** Payload for an HTTP-style request. */
+export interface HttpRequestPayload {
+  /** HTTP method (GET, POST, PUT, DELETE, etc.) */
+  httpMethod: string;
+  /** Full endpoint URL string */
   endpoint: string;
-  reqHash: string;
+  /** Request body as text (will be hashed, not stored raw) */
+  bodyText?: string;
 }
 
-/** Result of _hashStructuredData. */
-export interface StructuredHashResult {
-  hashHex: string;
-  wasTruncated: boolean;
-  nodesVisited: number;
-}
-
-/** Hash limits configuration. */
-export interface HashLimitsConfig {
-  readonly MAX_DEPTH: number;
-  readonly MAX_NODES: number;
-  readonly MAX_OBJECT_KEYS: number;
-  readonly MAX_ARRAY_ITEMS: number;
-  readonly MAX_STRING_CHARS: number;
-}
+// ─── Action tracking ───
 
 /** Snapshot of the last user action. */
 export interface ActionData {
@@ -48,14 +63,10 @@ export interface ActionSnapshot {
   timeSinceLastActionMs: number | null;
 }
 
-/** Environment snapshot. */
-export interface EnvSnapshot {
-  visibility: string;
-  net: { effectiveType: string | null } | null;
-}
+// ─── Log entry ───
 
 /** Log entry written to the queue on duplicate detection. */
-export interface LogEntry {
+export interface RdrLogEntry {
   ver: string;
   endpoint: string;
   reqHash: string;
@@ -66,20 +77,102 @@ export interface LogEntry {
   };
   lastAction: ActionData | null;
   env: EnvSnapshot;
-  mobx?: unknown;
+  tag?: string;
+  enrichments?: Record<string, unknown>;
 }
 
-/**
- * NetworkInformation interface — partial definition for navigator.connection.
- * Not available in all browsers; guarded at runtime.
- */
-export interface NetworkInformation {
-  effectiveType?: string;
+/** @deprecated Use RdrLogEntry instead. */
+export type LogEntry = RdrLogEntry;
+
+// ─── Flush payload ───
+
+/** Payload passed to the send function on flush. */
+export interface RdrFlushPayload {
+  trigger: string;
+  meta?: unknown;
+  entries: RdrLogEntry[];
 }
 
-/** Extends Navigator for connection-related vendor-prefixed properties. */
-export interface NavigatorWithConnection extends Navigator {
-  connection?: NetworkInformation;
-  mozConnection?: NetworkInformation;
-  webkitConnection?: NetworkInformation;
+// ─── Send function ───
+
+/** Custom send function for RDR flush results. */
+export type RdrSendFn = (payload: RdrFlushPayload) => void;
+
+// ─── Config ───
+
+/** Custom key factory — must return an object with endpoint + reqHash. */
+export type RdrKeyFactory = (payload: unknown) => RequestKeyResult;
+
+/** RDR initialization config. */
+export interface RdrConfig {
+  /** Sampling rate (0..1). 1 = always enabled, 0 = always disabled. Default: 1. */
+  samplingRate?: number;
+  /** localStorage key for persisting client ID. Default: 'rum_user_id'. */
+  samplingStorageKey?: string;
+  /** Explicit client ID for sampling. Overrides localStorage. */
+  clientId?: string;
+  /** Duplicate detection time window in ms. Default: 1000. */
+  duplicateThresholdMs?: number;
+  /** Cleanup interval for stale entries in ms. Default: 10000. */
+  cleanupIntervalMs?: number;
+  /** Flush interval in ms. Default: 15000. */
+  flushIntervalMs?: number;
+  /** Max events before auto-flush. Default: 50. */
+  flushMaxEvents?: number;
+  /** Hash limits for structured data. */
+  hashLimits?: Partial<HashLimitsConfig>;
+  /** Max body text length for HTTP requests. Default: 2048. */
+  httpBodyMaxChars?: number;
+  /** Custom send function. If not set, falls back to console.log. */
+  send?: RdrSendFn;
+  /** Custom key factory for RPC requests. Overrides default makeRpcRequestKey. */
+  rpcKeyFactory?: RdrKeyFactory;
+  /** Custom key factory for HTTP requests. Overrides default makeHttpRequestKey. */
+  httpKeyFactory?: RdrKeyFactory;
+  /** Enrichers — sync getters called during payload formation. */
+  enrichers?: Enricher[];
+  /** Enricher output limits. */
+  enricherLimits?: Partial<EnricherLimitsConfig>;
+  /** Custom metric tag added to every log entry. */
+  tag?: string;
+  /** Enable chrome extension events (dispatches CustomEvent with name 'rdr'). Default: false. */
+  chromeExtensionEvents?: boolean;
+  /** Max size of the user action buffer. Default: 3. */
+  actionsBufferMaxSize?: number;
+  /** Event types to track for user actions. Default: ['click', 'keydown', 'touchstart']. */
+  actionsTrackedEvents?: string[];
+}
+
+// ─── Result types ───
+
+/** Result of rdr.flush(). */
+export interface RdrFlushResult {
+  initialized: boolean;
+  flushed: boolean;
+  entriesCount: number;
+}
+
+/** Result of rdr.reqHandlerRpc() / rdr.reqHandlerHttp(). */
+export interface RdrReqHandlerResult {
+  initialized: boolean;
+  processed: boolean;
+  duplicate: boolean;
+}
+
+/** Result of rdr.resetTiming(). */
+export interface RdrResetTimingResult {
+  initialized: boolean;
+  reset: boolean;
+}
+
+/** Result of rdr.resetActions(). */
+export interface RdrResetActionsResult {
+  initialized: boolean;
+  reset: boolean;
+}
+
+/** Result of rdr.destroy(). */
+export interface RdrDestroyResult {
+  initialized: boolean;
+  destroyed: boolean;
 }

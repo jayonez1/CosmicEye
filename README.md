@@ -1,17 +1,19 @@
 # CosmicEye
 
-A set of RUM metrics for SPAs. Two independent modules:
+A set of RUM metrics for SPAs. Two independent modules + extensions:
 
 - **RDR** (RUM Duplicate Requests) — detects and logs duplicate API requests.
 - **RT** (Route Transition Metrics) — measures route transition timing (render + TTI).
+- **Extensions** — `observeHistory`, `RouteRenderObserver`, `mobxSpy`.
 
 **Key properties:**
 
-- Zero runtime dependencies for the core (React is an optional peer for extensions)
-- RDR: deterministic sampling ~5% in production, always enabled in dev
-- RT: dev-only, measures `route_render_ms` and `route_tti_ms`
-- `RouteRenderObserver` — "dumb" React provider (post-render)
+- Zero runtime dependencies for the core (React and MobX are optional peers)
+- Config-driven sampling, send functions, enrichers, tags
+- All public methods return result objects with `initialized` status
 - `observeHistory` — neutral pre-render navigation observer (history v4/v5)
+- `RouteRenderObserver` — post-render React provider
+- `mobxSpy` — MobX spy integration (no-op if MobX absent)
 
 ## Installation
 
@@ -26,8 +28,12 @@ npm install cosmic-eye
 ```ts
 import { rdr, initRDR } from 'cosmic-eye';
 
-initRDR();
-rdr.reqHandler({ s: 'UserService', m: 'getProfile', p: { id: 42 }, b: {} });
+const ok = initRDR({ samplingRate: 0.05, send: (p) => analytics.send('rdr', p) });
+
+// RPC-style
+rdr.reqHandlerRpc({ s: 'UserService', m: 'getProfile', p: { id: 42 }, b: {} });
+// HTTP-style
+rdr.reqHandlerHttp({ httpMethod: 'GET', endpoint: '/api/users/42' });
 ```
 
 ### RT + observeHistory + RouteRenderObserver
@@ -37,9 +43,8 @@ import { initRT, rt, observeHistory } from 'cosmic-eye';
 import { createBrowserHistory } from 'history';
 
 const history = createBrowserHistory();
-initRT();
+initRT({ send: (p) => analytics.send('rt', p), includePathname: true });
 
-// Pre-render: observer emits navigation events before React render
 const observer = observeHistory(history);
 observer.subscribe(({ pathname, search }) => {
   rt.startTransition(pathname, search);
@@ -49,56 +54,54 @@ observer.subscribe(({ pathname, search }) => {
 ```tsx
 import { RouteRenderObserver } from 'cosmic-eye/react';
 
-// Post-render: RouteRenderObserver fires after React commit
-<Router history={history}>
-  <RouteRenderObserver
-    onRouteChange={[
-      (pathname) => { rt.markRendered(pathname); },
-    ]}
-  >
-    <Switch>...</Switch>
-  </RouteRenderObserver>
-</Router>
+<RouteRenderObserver
+  onRouteChange={[(pathname) => { rt.markRendered(pathname); }]}
+>
+  {children}
+</RouteRenderObserver>
 ```
 
 ## How duplicate detection works
 
-1. Each incoming payload is hashed into a `reqHash` (combining endpoint + params hash + body hash)
-2. If the same `reqHash` was seen within `TIMINGS.DUPLICATE_THRESHOLD_MS` (default 1 000 ms), a log entry is created
+1. Each incoming payload is hashed into a `reqHash` (FNV-1a of endpoint + params + body)
+2. If the same `reqHash` was seen within `duplicateThresholdMs` (default 1 000 ms), a log entry is created
 3. Log entries accumulate in a buffer and are flushed:
-   - Every `FLUSH.INTERVAL_MS` (15 s)
-   - When buffer reaches `FLUSH.MAX_EVENTS` (50)
+   - Every `flushIntervalMs` (15 s)
+   - When buffer reaches `flushMaxEvents` (50)
    - On `visibilitychange` (tab hidden)
    - On `pagehide` (page close)
-   - On `destroy()`
+   - On `destroy()` or `flush()`
 
 ## Sampling
 
-In **production** (`NODE_ENV=production`), only ~5% of users are sampled. The decision is deterministic and stable across page reloads — a client ID is persisted in `localStorage` under key `rum_user_id`, hashed, and checked against the sampling rate.
-
-In **development** (`NODE_ENV !== 'production'`), sampling is always enabled.
+Sampling is **config-driven** via `samplingRate` (0..1). Default is `1` (always enabled). The decision is deterministic — a client ID is persisted in `localStorage`, hashed, and checked against the rate.
 
 ## API
 
 ### RDR
 
-| Function | Description |
-|----------|-------------|
-| `initRDR()` | Initialize. Safe to call multiple times. |
-| `rdr.reqHandler(payload)` | Pass an API request. `{ s, m, p?, b? }` |
-| `rdr.resetTiming()` | Reset timer (SPA route change) |
-| `rdr.resetActions()` | Clear action buffer |
-| `rdr.destroy()` | Stop timers, flush, clean up |
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `initRDR(config?)` | `boolean` | Initialize with optional config. |
+| `rdr.isInitialized()` | `boolean` | Check if active. |
+| `rdr.reqHandlerRpc(payload)` | `RdrReqHandlerResult` | Process RPC request. |
+| `rdr.reqHandlerHttp(payload)` | `RdrReqHandlerResult` | Process HTTP request. |
+| `rdr.flush(trigger?, meta?)` | `RdrFlushResult` | Manual flush. |
+| `rdr.resetTiming()` | `RdrResetTimingResult` | Reset page load timestamp. |
+| `rdr.resetActions()` | `RdrResetActionsResult` | Clear action buffer. |
+| `rdr.destroy()` | `RdrDestroyResult` | Stop, flush, clean up. |
 
 ### RT
 
-| Function | Description |
-|----------|-------------|
-| `initRT()` | Enable module (dev-only) |
-| `rt.startTransition(pathname, search)` | Start transition timing (pre-render) |
-| `rt.markRendered(pathname)` | Mark route render (post-render) |
-| `trackCritical(promise?)` | Track a critical async operation |
-| `rt.destroy()` | Clean up |
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `initRT(config?)` | `boolean` | Initialize with optional config. |
+| `rt.isInitialized()` | `boolean` | Check if active. |
+| `rt.startTransition(pathname, search?)` | `RtStartTransitionResult` | Start transition timing. |
+| `rt.markRendered(pathname)` | `RtMarkRenderedResult` | Mark render completion. |
+| `rt.trackCritical(promise?)` | `RtTrackCriticalResult` | Track critical operation. |
+| `rt.abortPending(reason?)` | `RtAbortPendingResult` | Abort active transition. |
+| `rt.destroy()` | `RtDestroyResult` | Clean up. |
 
 ### observeHistory
 
@@ -123,15 +126,17 @@ See [src/rdr/README.md](src/rdr/README.md) and [src/rt/README.md](src/rt/README.
 src/
   index.ts              — public API (re-exports only, no React)
   react.ts              — React extensions entry point (cosmic-eye/react)
+  shared/               — shared utilities (time, hash, sampling, enrichers, env)
   rdr/                  — RDR module: duplicate request detection
   rt/                   — RT module: route transition metrics
   extensions/
     history-route-observer/ — navigation observer (pre-render)
     route-render-observer/  — RouteRenderObserver React component (post-render)
+    mobx-spy/              — MobX spy extension (optional peer)
 tests/
-  rdr/                  — RDR tests (49)
-  rt/                   — RT tests (19)
-  extensions/           — extension tests (32)
+  rdr/                  — RDR tests
+  rt/                   — RT tests
+  extensions/           — extension tests (observer, route-render, mobx-spy)
 ```
 
 ## Test commands
@@ -152,6 +157,7 @@ Each module has its own README with integration guide, configuration reference, 
 - [src/rt/README.md](src/rt/README.md) — RT documentation
 - [src/extensions/history-route-observer/README.md](src/extensions/history-route-observer/README.md) — observer documentation
 - [src/extensions/route-render-observer/README.md](src/extensions/route-render-observer/README.md) — RouteRenderObserver documentation
+- [src/extensions/mobx-spy/README.md](src/extensions/mobx-spy/README.md) — mobxSpy documentation
 - [CHANGELOG.md](CHANGELOG.md) — change history
 
 ## License
