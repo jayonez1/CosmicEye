@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.5.1
+
+### Changed
+
+- **[rdr]** Removed unused `httpBodyMaxChars` from `RdrConfig` and `DEFAULTS`. HTTP body truncation remains controlled by `hashLimits.MAX_STRING_CHARS`.
+- **[docs]** Sampling section clarified: deterministic behavior requires a stable client ID (`clientId` or persisted `localStorage` ID); fallback may be non-deterministic when storage is unavailable.
+- **[docs]** `RouteRenderObserver` integration example was rewritten to a neutral `BrowserRouter` + router-tree shape to avoid mixing React Router v5/v6 APIs in one snippet.
+- **[tests]** RT tests were tightened: conditional assertions were replaced with strict expectations to reduce false-green outcomes.
+
+### Removed
+
+- **[rdr]** Deprecated `reqHandler(payload)` alias was removed. Use `reqHandlerRpc(payload)`.
+- **[shared]** Deprecated `makeRequestKey` alias was removed. Use `makeRpcRequestKey`.
+- **[rdr]** Deprecated type aliases `ApiRequestPayload` and `LogEntry` were removed.
+
+### Migration
+
+```diff
+- rdr.reqHandler(payload);
++ rdr.reqHandlerRpc(payload);
+
+- import { makeRequestKey } from 'cosmic-eye';
++ import { makeRpcRequestKey } from 'cosmic-eye';
+
+- import type { ApiRequestPayload, LogEntry } from 'cosmic-eye';
++ import type { RpcRequestPayload, RdrLogEntry } from 'cosmic-eye';
+```
+
 ## 0.5.0
 
 ### Added

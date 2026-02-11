@@ -118,10 +118,9 @@ describe('RT.startTransition', () => {
     vi.advanceTimersByTime(100);
 
     const call = findRtLog(consoleSpy);
-    if (call) {
-      const payload = call[1] as { entry: Record<string, unknown> };
-      expect(payload.entry.routeName).toContain('page-b');
-    }
+    expect(call).toBeDefined();
+    const payload = call![1] as { entry: Record<string, unknown> };
+    expect(payload.entry.routeName).toContain('page-b');
   });
 });
 
@@ -157,10 +156,9 @@ describe('RT.markRendered', () => {
     vi.advanceTimersByTime(DEFAULTS.CRITICAL_TIMEOUT_MS + 100);
 
     const call = findRtLog(consoleSpy);
-    if (call) {
-      const payload = call[1] as { entry: Record<string, unknown> };
-      expect(payload.entry.routeRenderMs).toBeNull();
-    }
+    expect(call).toBeDefined();
+    const payload = call![1] as { entry: Record<string, unknown> };
+    expect(payload.entry.routeRenderMs).toBeNull();
   });
 });
 

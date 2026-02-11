@@ -36,18 +36,17 @@ import { RouteRenderObserver } from 'cosmic-eye/react';
 
 ```tsx
 import { RouteRenderObserver } from 'cosmic-eye/react';
+import { BrowserRouter } from 'react-router-dom';
 
-<Router history={history}>
+<BrowserRouter>
   <RouteRenderObserver
     onRouteChange={[
       (pathname) => { console.log('route changed:', pathname); },
     ]}
   >
-    <Switch>
-      <Route path="/home" component={Home} />
-    </Switch>
+    {/* your router tree (v5: Switch/Route, v6: Routes/Route) */}
   </RouteRenderObserver>
-</Router>
+</BrowserRouter>
 ```
 
 ## Requirements

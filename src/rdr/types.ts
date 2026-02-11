@@ -34,9 +34,6 @@ export interface RpcRequestPayload {
   t?: number;
 }
 
-/** @deprecated Use RpcRequestPayload instead. */
-export type ApiRequestPayload = RpcRequestPayload;
-
 // ─── HTTP payload ───
 
 /** Payload for an HTTP-style request. */
@@ -81,9 +78,6 @@ export interface RdrLogEntry {
   enrichments?: Record<string, unknown>;
 }
 
-/** @deprecated Use RdrLogEntry instead. */
-export type LogEntry = RdrLogEntry;
-
 // ─── Flush payload ───
 
 /** Payload passed to the send function on flush. */
@@ -121,8 +115,6 @@ export interface RdrConfig {
   flushMaxEvents?: number;
   /** Hash limits for structured data. */
   hashLimits?: Partial<HashLimitsConfig>;
-  /** Max body text length for HTTP requests. Default: 2048. */
-  httpBodyMaxChars?: number;
   /** Custom send function. If not set, falls back to console.log. */
   send?: RdrSendFn;
   /** Custom key factory for RPC requests. Overrides default makeRpcRequestKey. */

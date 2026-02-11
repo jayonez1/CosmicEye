@@ -7,10 +7,8 @@ export { default as rdr } from './rdr';
 
 export type {
   RpcRequestPayload,
-  ApiRequestPayload,
   HttpRequestPayload,
   RdrLogEntry,
-  LogEntry,
   RdrFlushPayload,
   RdrSendFn,
   RdrKeyFactory,
@@ -42,7 +40,7 @@ export type {
 } from './rt';
 
 // === Shared public utils ===
-export { hashText, makeRpcRequestKey, makeRequestKey, makeHttpRequestKey } from './shared/hash';
+export { hashText, makeRpcRequestKey, makeHttpRequestKey } from './shared/hash';
 
 export type {
   RequestKeyResult,

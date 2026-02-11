@@ -10,7 +10,6 @@ export {
   hashText,
   hashStructuredData,
   makeRpcRequestKey,
-  makeRequestKey,
   makeHttpRequestKey,
   DEFAULT_HASH_LIMITS,
 } from './hash';

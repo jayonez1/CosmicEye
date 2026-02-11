@@ -89,7 +89,6 @@ rdr.destroy();
 | `isInitialized()` | `boolean` | Check if RDR is currently active. |
 | `reqHandlerRpc(payload)` | `RdrReqHandlerResult` | Process RPC-style request. |
 | `reqHandlerHttp(payload)` | `RdrReqHandlerResult` | Process HTTP-style request. |
-| `reqHandler(payload)` | `RdrReqHandlerResult` | **Deprecated** — alias for `reqHandlerRpc`. |
 | `flush(trigger?, meta?)` | `RdrFlushResult` | Manual flush with trigger name and optional metadata. |
 | `resetTiming()` | `RdrResetTimingResult` | Reset page load timestamp. |
 | `resetActions()` | `RdrResetActionsResult` | Clear user action buffer. |

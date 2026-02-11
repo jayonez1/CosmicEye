@@ -13,7 +13,6 @@ export const DEFAULTS = {
   CLEANUP_INTERVAL_MS: 10_000,
   FLUSH_INTERVAL_MS: 15_000,
   FLUSH_MAX_EVENTS: 50,
-  HTTP_BODY_MAX_CHARS: 2_048,
   ACTIONS_BUFFER_MAX_SIZE: 3,
   ACTIONS_TRACKED_EVENTS: ['click', 'keydown', 'touchstart'] as readonly string[],
 } as const;

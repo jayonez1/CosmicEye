@@ -157,18 +157,6 @@ describe('RDR.reqHandlerHttp', () => {
   });
 });
 
-// ─── reqHandler (deprecated alias) ───
-
-describe('RDR.reqHandler (deprecated alias)', () => {
-  it('delegates to reqHandlerRpc', () => {
-    initRDR();
-    const payload = { s: 'Svc', m: 'get', p: {}, b: {} };
-    const result = rdr.reqHandler(payload);
-    expect(result.initialized).toBe(true);
-    expect(result.processed).toBe(true);
-  });
-});
-
 // ─── flush ───
 
 describe('RDR.flush', () => {

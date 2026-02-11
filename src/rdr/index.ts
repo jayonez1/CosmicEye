@@ -83,11 +83,6 @@ class RDR {
     return this._initialized;
   }
 
-  /** @deprecated Use reqHandlerRpc instead. */
-  reqHandler(payload: RpcRequestPayload): RdrReqHandlerResult {
-    return this.reqHandlerRpc(payload);
-  }
-
   reqHandlerRpc(payload: RpcRequestPayload): RdrReqHandlerResult {
     if (!this._initialized) {
       return { initialized: false, processed: false, duplicate: false };
@@ -449,10 +444,8 @@ export default rdr;
 
 export type {
   RpcRequestPayload,
-  ApiRequestPayload,
   HttpRequestPayload,
   RdrLogEntry,
-  LogEntry,
   RdrFlushPayload,
   RdrSendFn,
   RdrKeyFactory,
@@ -472,5 +465,5 @@ export type {
   EnricherLimitsConfig,
 } from './types';
 
-export { hashText, makeRpcRequestKey, makeRequestKey, makeHttpRequestKey } from '../shared/hash';
+export { hashText, makeRpcRequestKey, makeHttpRequestKey } from '../shared/hash';
 export { VERSION } from './config';

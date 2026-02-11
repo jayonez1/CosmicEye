@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   hashText,
   makeRpcRequestKey,
-  makeRequestKey,
   makeHttpRequestKey,
   hashStructuredData,
   DEFAULT_HASH_LIMITS,
@@ -87,12 +86,6 @@ describe('makeRpcRequestKey', () => {
     const result = makeRpcRequestKey({ s: 'Svc', m: 'get', p: {}, b: body }, tinyLimits);
     const mask = parseInt(result.reqHash.split('_').pop()!, 10);
     expect(mask & 2).toBe(2); // body truncated
-  });
-});
-
-describe('makeRequestKey (deprecated alias)', () => {
-  it('is the same function as makeRpcRequestKey', () => {
-    expect(makeRequestKey).toBe(makeRpcRequestKey);
   });
 });
 

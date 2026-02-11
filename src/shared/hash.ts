@@ -221,10 +221,7 @@ export const hashStructuredData = (
   };
 };
 
-/**
- * Generate a request fingerprint for RPC-style requests (service + method + params + body).
- * Renamed from the former `makeRequestKey`.
- */
+/** Generate a request fingerprint for RPC-style requests (service + method + params + body). */
 export const makeRpcRequestKey = (
   apiMessage: { s?: string; m?: string; p?: unknown; b?: unknown },
   limits: HashLimitsConfig = DEFAULT_HASH_LIMITS,
@@ -243,9 +240,6 @@ export const makeRpcRequestKey = (
     reqHash: `req_${endpointHash}_${paramsHash.hashHex}_${bodyHash.hashHex}_${truncationMask}`,
   };
 };
-
-/** @deprecated Use `makeRpcRequestKey` instead. Will be removed in a future version. */
-export const makeRequestKey = makeRpcRequestKey;
 
 /**
  * Generate a request fingerprint for HTTP-style requests (method + endpoint URL + body text).

@@ -74,7 +74,7 @@ import { RouteRenderObserver } from 'cosmic-eye/react';
 
 ## Sampling
 
-Sampling is **config-driven** via `samplingRate` (0..1). Default is `1` (always enabled). The decision is deterministic — a client ID is persisted in `localStorage`, hashed, and checked against the rate.
+Sampling is **config-driven** via `samplingRate` (0..1). Default is `1` (always enabled). The decision is deterministic when a stable client ID is available (`clientId` from config or persisted `localStorage`). If storage is unavailable and no explicit `clientId` is provided, fallback ID generation may produce non-deterministic results between calls.
 
 ## API
 
