@@ -111,7 +111,7 @@ All fields are optional. Defaults are applied for omitted fields.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `samplingRate` | `number` | `1` | Sampling rate (0..1). `1` = always enabled. |
+| `samplingRate` | `number` | `0.05` | Sampling rate (0..1). |
 | `samplingStorageKey` | `string` | `'rum_rt_id'` | localStorage key for client ID. |
 | `clientId` | `string` | — | Explicit client ID (overrides localStorage). |
 | `criticalTimeoutMs` | `number` | `20_000` | Max TTI wait time (ms). |

@@ -26,6 +26,7 @@ beforeEach(async () => {
     ],
   });
   consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  localStorage.setItem('rum_rt_id', 'test-id-29');
 
   vi.resetModules();
 
@@ -40,6 +41,7 @@ afterEach(() => {
   } catch (_) {
     // ignore
   }
+  localStorage.removeItem('rum_rt_id');
   vi.useRealTimers();
   vi.restoreAllMocks();
 });

@@ -7,6 +7,7 @@ let consoleSpy: MockInstance;
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'] });
   consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  localStorage.setItem('rum_user_id', 'test-id-29');
   vi.resetModules();
 
   const mod = await import('../../src/rdr/index');
@@ -20,6 +21,7 @@ afterEach(() => {
   } catch (_) {
     // ignore
   }
+  localStorage.removeItem('rum_user_id');
   vi.useRealTimers();
   vi.restoreAllMocks();
 });

@@ -55,7 +55,6 @@ class RDR {
       // Apply and validate config BEFORE setting _initialized
       this._applyConfig(config);
 
-      // Sampling check
       const sampled = shouldEnableSample({
         rate: config?.samplingRate ?? DEFAULTS.SAMPLING_RATE,
         storageKey: config?.samplingStorageKey ?? DEFAULTS.SAMPLING_STORAGE_KEY,

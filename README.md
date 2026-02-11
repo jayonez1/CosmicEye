@@ -6,15 +6,6 @@ A set of RUM metrics for SPAs. Two independent modules + extensions:
 - **RT** (Route Transition Metrics) — measures route transition timing (render + TTI).
 - **Extensions** — `observeHistory`, `RouteRenderObserver`, `mobxSpy`.
 
-**Key properties:**
-
-- Zero runtime dependencies for the core (React and MobX are optional peers)
-- Config-driven sampling, send functions, enrichers, tags
-- All public methods return result objects with `initialized` status
-- `observeHistory` — neutral pre-render navigation observer (history v4/v5)
-- `RouteRenderObserver` — post-render React provider
-- `mobxSpy` — MobX spy integration (no-op if MobX absent)
-
 ## Installation
 
 ```bash
@@ -72,9 +63,20 @@ import { RouteRenderObserver } from 'cosmic-eye/react';
    - On `pagehide` (page close)
    - On `destroy()` or `flush()`
 
+## How route transition tracking works
+
+1. On navigation, call `startTransition(pathname, search?)` — RT creates a transition ID, stores the start time, and normalizes `routeName`.
+2. After route commit, call `markRendered(pathname)` — RT records render completion time.
+3. If there is critical async work, use `trackCritical()` — RT waits until all critical tasks are finished.
+4. RT marks the transition as interactive after `rafCount` frames + idle wait (`idleTimeoutMs`), then sends a `transition` event.
+5. The event includes `routeRenderMs` and `routeTtiMs` (and optional `pathname` / `search` if enabled in config).
+6. If interactive state is not reached before `criticalTimeoutMs` (default 20 s), RT still sends the event with `timedOut: true`.
+7. `abortPending(reason?)` sends an `abort` event; `destroy()` stops tracking and clears timers.
+
+
 ## Sampling
 
-Sampling is **config-driven** via `samplingRate` (0..1). Default is `1` (always enabled). The decision is deterministic when a stable client ID is available (`clientId` from config or persisted `localStorage`). If storage is unavailable and no explicit `clientId` is provided, fallback ID generation may produce non-deterministic results between calls.
+Sampling is **config-driven** via `samplingRate` (0..1). Default is `0.05` (5%). The decision is deterministic when a stable client ID is available (`clientId` from config or persisted `localStorage`). If storage is unavailable and no explicit `clientId` is provided, fallback ID generation may produce non-deterministic results between calls.
 
 ## API
 
@@ -117,8 +119,6 @@ Sampling is **config-driven** via `samplingRate` (0..1). Default is `1` (always 
 |------|------|-------------|
 | `children` | `ReactNode` | Child elements |
 | `onRouteChange` | `Array<(pathname, search) => void>` | Callbacks on route change |
-
-See [src/rdr/README.md](src/rdr/README.md) and [src/rt/README.md](src/rt/README.md) for log schemas and configuration reference.
 
 ## Project structure
 

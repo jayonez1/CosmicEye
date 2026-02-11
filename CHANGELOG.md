@@ -1,9 +1,20 @@
 # Changelog
 
+## 0.5.2
+
+### Changed
+
+- **[rdr/rt]** Default `samplingRate` was restored to `0.05` (5%) in runtime defaults and config type docs.
+- **[tests]** RDR/RT init tests now seed deterministic `localStorage` client IDs (`rum_user_id`, `rum_rt_id`) to avoid flaky sampling outcomes with the 5% default.
+- **[docs]** Root README was streamlined: removed duplicated "Key properties" block and redundant cross-reference line to module READMEs.
+- **[docs]** Added a dedicated "How route transition tracking works" section to the root README.
+- **[docs][rdr]** Added cookbook example for manual `flush()` + `resetTiming()` on pathname change via `observeHistory`.
+
 ## 0.5.1
 
 ### Changed
 
+- **[rdr/rt]** Default `samplingRate` changed to `0.05` (5%).
 - **[rdr]** Removed unused `httpBodyMaxChars` from `RdrConfig` and `DEFAULTS`. HTTP body truncation remains controlled by `hashLimits.MAX_STRING_CHARS`.
 - **[docs]** Sampling section clarified: deterministic behavior requires a stable client ID (`clientId` or persisted `localStorage` ID); fallback may be non-deterministic when storage is unavailable.
 - **[docs]** `RouteRenderObserver` integration example was rewritten to a neutral `BrowserRouter` + router-tree shape to avoid mixing React Router v5/v6 APIs in one snippet.

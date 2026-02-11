@@ -45,7 +45,7 @@ export type RtSendFn = (payload: RtEventPayload) => void;
 
 /** RT initialization config. */
 export interface RtConfig {
-  /** Sampling rate (0..1). 1 = always enabled. Default: 1. */
+  /** Sampling rate (0..1). 1 = always enabled. Default: 0.05. */
   samplingRate?: number;
   /** localStorage key for persisting client ID. Default: 'rum_rt_id'. */
   samplingStorageKey?: string;

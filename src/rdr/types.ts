@@ -99,7 +99,7 @@ export type RdrKeyFactory = (payload: unknown) => RequestKeyResult;
 
 /** RDR initialization config. */
 export interface RdrConfig {
-  /** Sampling rate (0..1). 1 = always enabled, 0 = always disabled. Default: 1. */
+  /** Sampling rate (0..1). 1 = always enabled, 0 = always disabled. Default: 0.05. */
   samplingRate?: number;
   /** localStorage key for persisting client ID. Default: 'rum_user_id'. */
   samplingStorageKey?: string;

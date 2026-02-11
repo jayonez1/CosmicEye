@@ -102,7 +102,7 @@ All fields are optional. Defaults are applied for omitted fields.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `samplingRate` | `number` | `1` | Sampling rate (0..1). `1` = always enabled. |
+| `samplingRate` | `number` | `0.05` | Sampling rate (0..1). |
 | `samplingStorageKey` | `string` | `'rum_user_id'` | localStorage key for client ID. |
 | `clientId` | `string` | — | Explicit client ID (overrides localStorage). |
 | `duplicateThresholdMs` | `number` | `1_000` | Duplicate detection window (ms). |
@@ -192,4 +192,26 @@ window.fetch = async (input, init) => {
 
   return originalFetch(input, init);
 };
+```
+
+### Cookbook: Manual flush + reset timing on pathname change
+
+```ts
+import { createBrowserHistory } from 'history';
+import { initRDR, rdr, observeHistory } from 'cosmic-eye';
+
+const history = createBrowserHistory();
+const observer = observeHistory(history);
+let prevPathname: string | null = null;
+
+const ok = initRDR();
+if (ok) {
+  observer.subscribe(({ action, pathname }) => {
+    if (action === 'INIT' || pathname !== prevPathname) {
+      prevPathname = pathname;
+      rdr.flush(`history action: ${action}`, { pathname });
+      rdr.resetTiming();
+    }
+  });
+}
 ```
