@@ -1,6 +1,7 @@
 # CosmicEye
 
-A set of RUM metrics for SPAs. Two independent modules + extensions:
+RUM metrics toolkit for SPAs: duplicate request detection and route transition timing.
+Two independent modules + extensions:
 
 - **RDR** (RUM Duplicate Requests) — detects and logs duplicate API requests.
 - **RT** (Route Transition Metrics) — measures route transition timing (render + TTI).

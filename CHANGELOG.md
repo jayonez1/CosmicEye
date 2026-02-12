@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.5
+
+### Changed
+
+- **[package]** Updated `package.json` description to reflect current library scope (`RDR` + `RT`).
+- **[package]** Pinned `devDependencies` versions in `package.json`.
+- **[docs]** Updated the root `README.md` introduction to match the package description.
+
 ## 0.5.4
 
 ### Changed
