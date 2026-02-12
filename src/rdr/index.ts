@@ -422,10 +422,7 @@ class RDR {
         console.log(`CosmicEye: RDR | flush | ${trigger}`, flushPayload);
       }
 
-      if (this._chromeExtensionEvents) {
-        dispatchExtensionEvent(CHROME_EXT_EVENT_NAME, 'flush', flushPayload);
-      }
-
+      
       return { initialized: this._initialized, flushed: true, entriesCount: count };
     } catch (_) {
       return { initialized: this._initialized, flushed: false, entriesCount: 0 };

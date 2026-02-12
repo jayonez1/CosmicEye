@@ -74,7 +74,8 @@ const _onSpyEvent = (event: { type: string; name?: string; object?: unknown }): 
 /**
  * MobX spy extension.
  *
- * If mobx is not installed, all methods are safe no-ops.
+ * DI-only integration: pass `mobx.spy` via `init({ spy })`.
+ * If `spy` is not provided, `init()` is a safe no-op.
  * Designed to be used as a presend enricher via `mobxSpy.snapshot()`.
  */
 export const mobxSpy = {
@@ -86,21 +87,14 @@ export const mobxSpy = {
     _bufferMaxSize = config?.bufferMaxSize ?? DEFAULTS.BUFFER_MAX_SIZE;
     _trackedTypes = config?.trackedTypes ?? DEFAULTS.TRACKED_TYPES;
 
-    try {
-      // Dynamic import to avoid fatal error when mobx is not installed.
-      // mobx is an optional peer dependency — may not exist at runtime.
-      const moduleName = 'mobx';
+    if (typeof config?.spy !== 'function') {
+      return;
+    }
 
-      void import(moduleName).then((mobx: { spy?: (listener: (event: never) => void) => () => void }) => {
-        if (_disposer) return; // already initialized by another call
-        if (typeof mobx?.spy === 'function') {
-          _disposer = mobx.spy(_onSpyEvent as (event: never) => void);
-        }
-      }).catch(() => {
-        // mobx not available — no-op
-      });
+    try {
+      _disposer = config.spy(_onSpyEvent as (event: unknown) => void);
     } catch (_) {
-      // mobx not available — no-op
+      // spy attach failed — no-op
     }
   },
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.3
+
+### Changed
+
+- **[mobxSpy] BREAKING** Switched to DI-only integration: `mobxSpy.init()` captures events only when `spy` is provided in config.
+- **[mobxSpy]** Removed runtime `mobx` dynamic-import fallback; missing `spy` now results in an explicit no-op.
+- **[package]** Removed `mobx` from `peerDependencies` and `peerDependenciesMeta`.
+- **[docs]** Updated `src/extensions/mobx-spy/README.md` and root `README.md` for DI-only usage.
+- **[tests/mobxSpy]** Updated coverage for DI-only behavior, including no-spy no-op and spy attach error handling.
+- **[rdr]** Chrome extension events: removed `flush` event dispatch to avoid sending batched payloads to extension.
+
 ## 0.5.2
 
 ### Changed

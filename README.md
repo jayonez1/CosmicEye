@@ -132,7 +132,7 @@ src/
   extensions/
     history-route-observer/ — navigation observer (pre-render)
     route-render-observer/  — RouteRenderObserver React component (post-render)
-    mobx-spy/              — MobX spy extension (optional peer)
+    mobx-spy/              — MobX spy extension (DI-only via `mobxSpy.init({ spy })`)
 tests/
   rdr/                  — RDR tests
   rt/                   — RT tests

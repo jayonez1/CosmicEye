@@ -23,4 +23,13 @@ export interface MobxSpyConfig {
   bufferMaxSize?: number;
   /** MobX event types to track. Default: ['action', 'reaction']. */
   trackedTypes?: string[];
+  /**
+   * Pass `mobx.spy` function from application code.
+   * Required for actual event capture; without it `init()` is a no-op.
+   *
+   * @example
+   * import { spy } from 'mobx';
+   * mobxSpy.init({ spy });
+   */
+  spy?: (listener: (event: unknown) => void) => () => void;
 }

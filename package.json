@@ -48,7 +48,7 @@
     "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
     "format:check": "prettier --check 'src/**/*.ts' 'tests/**/*.ts'",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run test && npm run typecheck && npm run build"
+    "prepublishOnly": "npm run test && npm run lint && npm run typecheck && npm run build"
   },
   "keywords": [
     "rum",
@@ -69,8 +69,7 @@
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "react-router-dom": ">=5.0.0",
-    "mobx": ">=5.0.0"
+    "react-router-dom": ">=5.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -80,9 +79,6 @@
       "optional": true
     },
     "react-router-dom": {
-      "optional": true
-    },
-    "mobx": {
       "optional": true
     }
   },
