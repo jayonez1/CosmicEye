@@ -13,6 +13,10 @@ Two independent modules + extensions:
 npm install cosmic-eye
 ```
 
+## Chrome DevTools Extension
+
+- [CosmicEye Chrome Extension](https://github.com/jayonez1/CosmicEye-chrome-extension) — companion DevTools panel for real-time RDR/RT monitoring.
+
 ## Quick start
 
 ### RDR
