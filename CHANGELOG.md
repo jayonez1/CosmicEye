@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.4
+
+### Changed
+
+- **[rdr]** Restored `flush` event dispatch for Chrome extension events to maintain compatibility with existing extension.
+
 ## 0.5.3
 
 ### Changed
