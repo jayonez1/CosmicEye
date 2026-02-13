@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.0
+
+### Changed
+
+- **[package] BREAKING** Package is now ESM-only. Removed CommonJS export conditions and CJS artifacts (`dist/*.cjs`, `dist/*.d.cts`).
+- **[build]** Disabled source map generation for published artifacts to reduce package unpacked size.
+
+### Migration
+
+```diff
+- const { initRDR } = require('cosmic-eye');
++ import { initRDR } from 'cosmic-eye';
+
+- const { RouteRenderObserver } = require('cosmic-eye/react');
++ import { RouteRenderObserver } from 'cosmic-eye/react';
+```
+
 ## 0.5.5
 
 ### Changed
