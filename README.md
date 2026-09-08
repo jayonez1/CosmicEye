@@ -7,6 +7,26 @@ Two independent modules + extensions:
 - **RT** (Route Transition Metrics) — measures route transition timing (render + TTI).
 - **Extensions** — `observeHistory`, `RouteRenderObserver`, `mobxSpy`.
 
+### Entry points
+
+| Import path | Contents |
+|-------------|----------|
+| `cosmic-eye` | RDR + RT + shared hash utils + observeHistory + mobxSpy (no React) |
+| `cosmic-eye/rdr` | RDR only |
+| `cosmic-eye/rt` | RT only |
+| `cosmic-eye/extensions` | observeHistory + mobxSpy (no React) |
+| `cosmic-eye/react` | RouteRenderObserver (requires React + react-router-dom) |
+
+Existing imports from `cosmic-eye`, including `observeHistory`, `mobxSpy`, and their types, remain supported. Sub-path imports are optional:
+
+```ts
+import rdr, { initRDR } from 'cosmic-eye/rdr';
+import rt, { initRT } from 'cosmic-eye/rt';
+import { observeHistory, mobxSpy } from 'cosmic-eye/extensions';
+```
+
+The `rdr` and `rt` objects are default exports from their sub-paths and named exports from `cosmic-eye`. Both paths share the same instances.
+
 ## Installation
 
 ```bash
@@ -35,7 +55,8 @@ rdr.reqHandlerHttp({ httpMethod: 'GET', endpoint: '/api/users/42' });
 ### RT + observeHistory + RouteRenderObserver
 
 ```ts
-import { initRT, rt, observeHistory } from 'cosmic-eye';
+import { initRT, rt } from 'cosmic-eye';
+import { observeHistory } from 'cosmic-eye/extensions';
 import { createBrowserHistory } from 'history';
 
 const history = createBrowserHistory();
@@ -129,12 +150,13 @@ Sampling is **config-driven** via `samplingRate` (0..1). Default is `0.05` (5%).
 
 ```
 src/
-  index.ts              — public API (re-exports only, no React)
-  react.ts              — React extensions entry point (cosmic-eye/react)
+  index.ts              — main entry: RDR + RT + shared hash utils + non-React extensions
+  react.ts              — React extensions entry (cosmic-eye/react)
   shared/               — shared utilities (time, hash, sampling, enrichers, env)
-  rdr/                  — RDR module: duplicate request detection
-  rt/                   — RT module: route transition metrics
+  rdr/                  — RDR module (cosmic-eye/rdr)
+  rt/                   — RT module (cosmic-eye/rt)
   extensions/
+    index.ts               — extensions entry (cosmic-eye/extensions)
     history-route-observer/ — navigation observer (pre-render)
     route-render-observer/  — RouteRenderObserver React component (post-render)
     mobx-spy/              — MobX spy extension (DI-only via `mobxSpy.init({ spy })`)

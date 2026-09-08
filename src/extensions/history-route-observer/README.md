@@ -14,7 +14,7 @@ Provides a single, shared source of navigation events that fires **before** Reac
 ## API
 
 ```ts
-import { observeHistory } from 'cosmic-eye';
+import { observeHistory } from 'cosmic-eye/extensions';
 
 const observer = observeHistory(history);
 
@@ -74,7 +74,7 @@ The observer detects the `listen` callback signature automatically:
 ## Example
 
 ```ts
-import { observeHistory } from 'cosmic-eye';
+import { observeHistory } from 'cosmic-eye/extensions';
 import { createBrowserHistory } from 'history';
 
 const history = createBrowserHistory();

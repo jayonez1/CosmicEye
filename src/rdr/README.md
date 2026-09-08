@@ -53,7 +53,8 @@ All public methods return **result objects** with an `initialized` field. If RDR
 ### Step 4: Handle SPA route changes (recommended)
 
 ```ts
-import { rdr, observeHistory } from 'cosmic-eye';
+import { rdr } from 'cosmic-eye';
+import { observeHistory } from 'cosmic-eye/extensions';
 import { createBrowserHistory } from 'history';
 
 const history = createBrowserHistory();
@@ -198,7 +199,8 @@ window.fetch = async (input, init) => {
 
 ```ts
 import { createBrowserHistory } from 'history';
-import { initRDR, rdr, observeHistory } from 'cosmic-eye';
+import { initRDR, rdr } from 'cosmic-eye';
+import { observeHistory } from 'cosmic-eye/extensions';
 
 const history = createBrowserHistory();
 const observer = observeHistory(history);

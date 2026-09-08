@@ -1,12 +1,18 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/react.ts'],
+  entry: {
+    index: 'src/index.ts',
+    react: 'src/react.ts',
+    rdr: 'src/rdr/index.ts',
+    rt: 'src/rt/index.ts',
+    extensions: 'src/extensions/index.ts',
+  },
   format: ['esm'],
   dts: true,
   sourcemap: false,
   clean: true,
   outDir: 'dist',
-  splitting: false,
+  splitting: true,
   treeshake: true,
 });

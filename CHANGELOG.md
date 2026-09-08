@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.0
+
+### Changed
+
+- **[package]** Added granular sub-path exports: `cosmic-eye/rdr`, `cosmic-eye/rt`, `cosmic-eye/extensions`.
+- **[package]** Existing main entry point exports, including `observeHistory`, `mobxSpy`, and their types, remain supported. Sub-path imports are optional and share the same module instances.
+- **[build]** Enabled code splitting (`splitting: true`) — shared code is extracted into chunks, no duplication across entry points.
+- **[build]** Extensions barrel (`src/extensions/index.ts`) no longer includes React-dependent `RouteRenderObserver`; it remains in `cosmic-eye/react`.
+- **[docs]** Documented optional sub-path imports and backward compatibility with existing imports.
+
+### Compatibility
+
+No import changes are required when upgrading from 0.6.0. Existing imports continue to work:
+
+```ts
+import { initRDR, observeHistory, mobxSpy } from 'cosmic-eye';
+```
+
 ## 0.6.0
 
 ### Changed

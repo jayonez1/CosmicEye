@@ -11,6 +11,18 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./rdr": {
+      "types": "./dist/rdr.d.ts",
+      "default": "./dist/rdr.js"
+    },
+    "./rt": {
+      "types": "./dist/rt.d.ts",
+      "default": "./dist/rt.js"
+    },
+    "./extensions": {
+      "types": "./dist/extensions.d.ts",
+      "default": "./dist/extensions.js"
+    },
     "./react": {
       "types": "./dist/react.d.ts",
       "default": "./dist/react.js"
@@ -18,10 +30,7 @@
   },
   "sideEffects": false,
   "files": [
-    "dist/index.js",
-    "dist/index.d.ts",
-    "dist/react.js",
-    "dist/react.d.ts",
+    "dist",
     "README.md",
     "LICENSE"
   ],

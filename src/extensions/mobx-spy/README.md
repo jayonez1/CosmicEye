@@ -8,7 +8,8 @@ Lightweight MobX spy integration for CosmicEye. Tracks MobX actions and reaction
 
 ```ts
 import { spy } from 'mobx';
-import { mobxSpy, initRDR } from 'cosmic-eye';
+import { mobxSpy } from 'cosmic-eye/extensions';
+import { initRDR } from 'cosmic-eye';
 
 // Required for tracking: pass spy explicitly
 mobxSpy.init({ spy });

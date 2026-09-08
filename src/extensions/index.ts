@@ -1,7 +1,5 @@
-// Extensions barrel — re-exports all extension modules
-
-export { RouteRenderObserver } from './route-render-observer';
-export type { RouteRenderObserverProps, RouteChangeListener } from './route-render-observer';
+// Extensions barrel — non-React extensions only.
+// React extensions (RouteRenderObserver) are in 'cosmic-eye/react'.
 
 export { observeHistory } from './history-route-observer';
 export type {

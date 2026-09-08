@@ -23,7 +23,8 @@ npm install cosmic-eye
 ### Step 2: Initialize + observer
 
 ```ts
-import { initRT, rt, observeHistory } from 'cosmic-eye';
+import { initRT, rt } from 'cosmic-eye';
+import { observeHistory } from 'cosmic-eye/extensions';
 import { createBrowserHistory } from 'history';
 
 const history = createBrowserHistory();

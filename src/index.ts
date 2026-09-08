@@ -52,6 +52,7 @@ export type {
 } from './shared/types';
 
 // === Extensions (non-React) ===
+// Also available from 'cosmic-eye/extensions'.
 export { observeHistory, mobxSpy } from './extensions';
 
 export type {
