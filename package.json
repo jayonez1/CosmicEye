@@ -1,6 +1,6 @@
 {
   "name": "cosmic-eye",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "description": "RUM metrics toolkit for SPAs: duplicate request detection and route transition timing",
   "type": "module",
   "main": "./dist/index.js",
