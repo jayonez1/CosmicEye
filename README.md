@@ -44,7 +44,7 @@ npm install cosmic-eye
 ```ts
 import { rdr, initRDR } from 'cosmic-eye';
 
-const ok = initRDR({ samplingRate: 0.05, send: (p) => analytics.send('rdr', p) });
+const ok = initRDR({ samplingRate: 0.15, send: (p) => analytics.send('rdr', p) });
 
 // RPC-style
 rdr.reqHandlerRpc({ s: 'UserService', m: 'getProfile', p: { id: 42 }, b: {} });
@@ -102,7 +102,35 @@ import { RouteRenderObserver } from 'cosmic-eye/react';
 
 ## Sampling
 
-Sampling is **config-driven** via `samplingRate` (0..1). Default is `0.05` (5%). The decision is deterministic when a stable client ID is available (`clientId` from config or persisted `localStorage`). If storage is unavailable and no explicit `clientId` is provided, fallback ID generation may produce non-deterministic results between calls.
+Both RDR and RT accept two sampling options:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `samplingRate` | `number` | `1` (100%) | A finite number from 0 to 1. |
+| `samplingFn` | `(samplingRate: number) => boolean` | — | Optional synchronous function that makes the entire sampling decision. |
+
+Without `samplingFn`, the first `init` uses `Math.random() < samplingRate`. For example, `0.15` selects approximately 15% of page loads, not 15% of unique users or individual requests. At `0` collection is disabled; at `1` it is enabled for every page load. No `localStorage` or `sessionStorage` is accessed by sampling.
+
+Each module stores its decision (`true` or `false`) in memory for the lifetime of its instance. Repeated `init` calls, SPA navigation, and `destroy()` followed by `init` do not run sampling again or apply new sampling options. A full page reload creates a new instance and a new decision. RDR and RT make independent decisions; imports from the main entry point and sub-paths use the same module instances.
+
+When `samplingFn` is provided, it receives the rate (including the default `1`) and its result replaces random sampling, even at rates `0` and `1`. Only `true` enables collection; exceptions or non-boolean results disable it. Async functions are not supported. An invalid rate disables collection without calling the function. With a custom function, the consumer is responsible for respecting the requested percentage.
+
+For example, a product with a known user ID can provide deterministic sampling and share the selection across RDR and RT:
+
+```ts
+import { hashText, initRDR, initRT, type SamplingFn } from 'cosmic-eye';
+
+const userId = 'user-123'; // Replace with the product's user ID before init.
+const samplingFn: SamplingFn = (rate) => {
+  const bucket = (parseInt(hashText(userId), 16) % 10_000) / 10_000;
+  return bucket < rate;
+};
+
+initRDR({ samplingRate: 0.15, samplingFn });
+initRT({ samplingRate: 0.15, samplingFn });
+```
+
+`clientId` and `samplingStorageKey` were removed in 1.0. Products that need persistent IDs or storage-based selection can implement them inside `samplingFn`. Existing stored IDs are left untouched. See the [1.0 migration notes](CHANGELOG.md#100) for upgrading from the previous 5% default.
 
 ## API
 

@@ -49,6 +49,7 @@ export type {
   EnvSnapshot,
   Enricher,
   EnricherLimitsConfig,
+  SamplingFn,
 } from './shared/types';
 
 // === Extensions (non-React) ===

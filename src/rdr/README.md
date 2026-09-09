@@ -18,14 +18,14 @@ Call `initRDR()` as early as possible — before any API requests are sent. Pass
 import { initRDR } from 'cosmic-eye';
 
 const ok = initRDR({
-  samplingRate: 0.05,
+  samplingRate: 0.15,
   send: (payload) => myAnalytics.send('rdr', payload),
   tag: 'my-app-v2',
 });
 // ok === true if initialized, false if sampling excluded or error
 ```
 
-`initRDR()` returns `boolean` — `true` if RDR was activated, `false` if not (e.g. sampling excluded). Subsequent calls return `true` (already initialized).
+`initRDR()` returns `boolean` — `true` if RDR was activated, `false` if not (e.g. sampling excluded). The first sampling decision is retained for the page load: subsequent calls do not rerun sampling, including when the result was `false`.
 
 ### Step 3: Pass API requests to a handler
 
@@ -80,6 +80,8 @@ rdr.destroy();
 // returns { initialized: false, destroyed: true }
 ```
 
+`destroy()` stops collection but retains the sampling decision. A subsequent `init` can restart an accepted module; a rejected module stays disabled until a full page reload.
+
 ---
 
 ## API Reference
@@ -103,9 +105,8 @@ All fields are optional. Defaults are applied for omitted fields.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `samplingRate` | `number` | `0.05` | Sampling rate (0..1). |
-| `samplingStorageKey` | `string` | `'rum_user_id'` | localStorage key for client ID. |
-| `clientId` | `string` | — | Explicit client ID (overrides localStorage). |
+| `samplingRate` | `number` | `1` (100%) | Finite page-load sampling rate (0..1), passed to `samplingFn` when provided. |
+| `samplingFn` | `SamplingFn` | — | Synchronous `(samplingRate: number) => boolean`; replaces random sampling, including at rates 0/1. |
 | `duplicateThresholdMs` | `number` | `1_000` | Duplicate detection window (ms). |
 | `cleanupIntervalMs` | `number` | `10_000` | Stale entry cleanup interval (ms). |
 | `flushIntervalMs` | `number` | `15_000` | Periodic flush interval (ms). |
@@ -120,6 +121,12 @@ All fields are optional. Defaults are applied for omitted fields.
 | `chromeExtensionEvents` | `boolean` | `false` | Dispatch `CustomEvent('rdr', ...)` for Chrome extension. |
 | `actionsBufferMaxSize` | `number` | `3` | User action buffer size. |
 | `actionsTrackedEvents` | `string[]` | `['click', 'keydown', 'touchstart']` | DOM events tracked. |
+
+### Sampling
+
+Without `samplingFn`, RDR uses `Math.random() < samplingRate` once per page load. Both `true` and `false` are retained in memory across repeated `init`, route changes, and `destroy()`/`init`. Sampling options from later calls are ignored. No storage is used.
+
+A custom function receives the rate and must synchronously return `true` to enable collection; exceptions and non-boolean results disable collection. Invalid rates disable collection without calling the function. RDR and RT decide independently. For custom user-based selection and migration from `clientId`/`samplingStorageKey`, see [Sampling](../../README.md#sampling).
 
 ### Enrichers
 

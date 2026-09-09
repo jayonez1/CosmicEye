@@ -31,11 +31,13 @@ export interface NavigatorWithConnection extends Navigator {
   webkitConnection?: NetworkInformation;
 }
 
+/** Synchronous sampling decision. Replaces random sampling; only true enables collection. */
+export type SamplingFn = (samplingRate: number) => boolean;
+
 /** Sampling configuration accepted by the shared sampling function. */
 export interface SamplingConfig {
   rate: number;
-  storageKey: string;
-  clientId?: string | null;
+  samplingFn?: SamplingFn;
 }
 
 /** Result of makeRpcRequestKey / makeHttpRequestKey — identifies a unique request. */

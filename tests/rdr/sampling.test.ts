@@ -1,63 +1,71 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { shouldEnableSample } from '../../src/shared/sampling';
+import type { SamplingFn } from '../../src/shared/types';
 
-const BASE_CONFIG = { rate: 0.05, storageKey: 'rum_user_id' };
-
-beforeEach(() => {
-  localStorage.clear();
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('shouldEnableSample', () => {
-  it('returns true when rate >= 1', () => {
-    expect(shouldEnableSample({ ...BASE_CONFIG, rate: 1 })).toBe(true);
+  it.each([
+    { rate: 1, random: 0.999, expected: true },
+    { rate: 0, random: 0, expected: false },
+    { rate: 0.15, random: 0.149, expected: true },
+    { rate: 0.15, random: 0.15, expected: false },
+    { rate: 0.15, random: 0.9, expected: false },
+  ])('samples rate $rate with random $random as $expected', ({ rate, random, expected }) => {
+    vi.spyOn(Math, 'random').mockReturnValue(random);
+    expect(shouldEnableSample({ rate })).toBe(expected);
   });
 
-  it('returns false when rate <= 0', () => {
-    expect(shouldEnableSample({ ...BASE_CONFIG, rate: 0 })).toBe(false);
+  it.each([0, 0.15, 1])('lets the custom function accept or reject at rate %s', (rate) => {
+    const random = vi.spyOn(Math, 'random');
+    const samplingFn = vi.fn().mockReturnValueOnce(false).mockReturnValueOnce(true);
+
+    expect(shouldEnableSample({ rate, samplingFn })).toBe(false);
+    expect(shouldEnableSample({ rate, samplingFn })).toBe(true);
+    expect(samplingFn.mock.calls).toEqual([[rate], [rate]]);
+    expect(random).not.toHaveBeenCalled();
   });
 
-  it('returns a boolean for fractional rate', () => {
-    const result = shouldEnableSample(BASE_CONFIG);
-    expect(typeof result).toBe('boolean');
+  it('returns false when the custom function throws, without falling back to random', () => {
+    const random = vi.spyOn(Math, 'random');
+    const samplingFn = () => {
+      throw new Error('sampling failed');
+    };
+
+    expect(shouldEnableSample({ rate: 1, samplingFn })).toBe(false);
+    expect(random).not.toHaveBeenCalled();
   });
 
-  it('does not crash when localStorage throws', () => {
-    const origGetItem = localStorage.getItem;
-    const origSetItem = localStorage.setItem;
+  it.each([undefined, null, 1, 'true', {}, Promise.resolve(true)])(
+    'rejects a non-boolean custom result: %s',
+    (result) => {
+      const samplingFn = (() => result) as unknown as SamplingFn;
+      expect(shouldEnableSample({ rate: 1, samplingFn })).toBe(false);
+    },
+  );
 
-    localStorage.getItem = () => { throw new Error('denied'); };
-    localStorage.setItem = () => { throw new Error('denied'); };
+  it.each([-0.1, 1.1, NaN, Infinity, -Infinity])('rejects an invalid rate: %s', (rate) => {
+    const random = vi.spyOn(Math, 'random');
+    const samplingFn = vi.fn(() => true);
 
-    expect(() => shouldEnableSample(BASE_CONFIG)).not.toThrow();
-
-    localStorage.getItem = origGetItem;
-    localStorage.setItem = origSetItem;
+    expect(shouldEnableSample({ rate })).toBe(false);
+    expect(shouldEnableSample({ rate, samplingFn })).toBe(false);
+    expect(samplingFn).not.toHaveBeenCalled();
+    expect(random).not.toHaveBeenCalled();
   });
 
-  it('produces deterministic result for explicit clientId', () => {
-    const config = { ...BASE_CONFIG, clientId: 'test-deterministic-id-12345' };
-    const result1 = shouldEnableSample(config);
-    const result2 = shouldEnableSample(config);
-    expect(result1).toBe(result2);
-  });
+  it('works without reading localStorage or sessionStorage', () => {
+    const denyStorage = () => {
+      throw new Error('storage denied');
+    };
+    const local = vi.spyOn(window, 'localStorage', 'get').mockImplementation(denyStorage);
+    const session = vi.spyOn(window, 'sessionStorage', 'get').mockImplementation(denyStorage);
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
 
-  it('uses explicit clientId over localStorage', () => {
-    localStorage.setItem('rum_user_id', 'stored-id');
-    const spy = vi.spyOn(Storage.prototype, 'getItem');
-
-    shouldEnableSample({ ...BASE_CONFIG, clientId: 'explicit-id' });
-
-    // localStorage.getItem should NOT have been called
-    expect(spy).not.toHaveBeenCalled();
-    spy.mockRestore();
-  });
-
-  it('different clientIds can produce different sampling decisions', () => {
-    // With rate=0.5, different client IDs should eventually differ
-    const results = new Set<boolean>();
-    for (let i = 0; i < 100; i++) {
-      results.add(shouldEnableSample({ ...BASE_CONFIG, rate: 0.5, clientId: `client-${i}` }));
-    }
-    expect(results.size).toBe(2); // both true and false
+    expect(shouldEnableSample({ rate: 0.15 })).toBe(true);
+    expect(local).not.toHaveBeenCalled();
+    expect(session).not.toHaveBeenCalled();
   });
 });

@@ -7,8 +7,7 @@ export const CHROME_EXT_EVENT_NAME = 'rdr';
 // ─── Defaults (used when config does not override) ───
 
 export const DEFAULTS = {
-  SAMPLING_RATE: 0.05,
-  SAMPLING_STORAGE_KEY: 'rum_user_id',
+  SAMPLING_RATE: 1,
   DUPLICATE_THRESHOLD_MS: 1_000,
   CLEANUP_INTERVAL_MS: 10_000,
   FLUSH_INTERVAL_MS: 15_000,

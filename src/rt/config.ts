@@ -13,8 +13,7 @@ export const NORMALIZE_ID_REGEX = /\/\d+/g;
 // ─── Defaults (used when config does not override) ───
 
 export const DEFAULTS = {
-  SAMPLING_RATE: 0.05,
-  SAMPLING_STORAGE_KEY: 'rum_rt_id',
+  SAMPLING_RATE: 1,
   CRITICAL_TIMEOUT_MS: 20_000,
   IDLE_TIMEOUT_MS: 1_500,
   RAF_COUNT: 2,

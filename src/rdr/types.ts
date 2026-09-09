@@ -4,10 +4,12 @@ import type {
   EnvSnapshot,
   HashLimitsConfig,
   RequestKeyResult,
+  SamplingFn,
 } from '../shared/types';
 
 // Re-export shared types used by consumers
 export type {
+  SamplingFn,
   EnvSnapshot,
   HashLimitsConfig,
   RequestKeyResult,
@@ -99,12 +101,10 @@ export type RdrKeyFactory = (payload: unknown) => RequestKeyResult;
 
 /** RDR initialization config. */
 export interface RdrConfig {
-  /** Sampling rate (0..1). 1 = always enabled, 0 = always disabled. Default: 0.05. */
+  /** Page-load sampling rate (0..1). Default: 1. Passed to samplingFn when provided. */
   samplingRate?: number;
-  /** localStorage key for persisting client ID. Default: 'rum_user_id'. */
-  samplingStorageKey?: string;
-  /** Explicit client ID for sampling. Overrides localStorage. */
-  clientId?: string;
+  /** Sync override, called once per page load even at rates 0/1. Throws disable collection. */
+  samplingFn?: SamplingFn;
   /** Duplicate detection time window in ms. Default: 1000. */
   duplicateThresholdMs?: number;
   /** Cleanup interval for stale entries in ms. Default: 10000. */

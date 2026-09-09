@@ -2,7 +2,7 @@
 
 export { nowMs, elapsedMs } from './time';
 export { env } from './env';
-export { shouldEnableSample, getClientId } from './sampling';
+export { shouldEnableSample } from './sampling';
 export { generateId } from './generate-id';
 export { dispatchExtensionEvent } from './chrome-ext';
 export { collectEnrichers, DEFAULT_ENRICHER_LIMITS } from './enrichers';
@@ -21,6 +21,7 @@ export type {
   NetworkInformation,
   NavigatorWithConnection,
   SamplingConfig,
+  SamplingFn,
   RequestKeyResult,
   StructuredHashResult,
   HashLimitsConfig,

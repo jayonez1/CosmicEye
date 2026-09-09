@@ -28,6 +28,8 @@ class RDR {
   private _cleanupTimer: ReturnType<typeof setInterval> | null = null;
   private _flushTimer: ReturnType<typeof setInterval> | null = null;
   private _initialized = false;
+  // Sampling survives destroy/init; a full page reload creates a fresh module instance.
+  private _samplingDecision: boolean | undefined;
   private _pageLoadTime: number | null = null;
   private _boundOnVisibilityChange: (() => void) | null = null;
   private _boundOnPageHide: (() => void) | null = null;
@@ -52,19 +54,17 @@ class RDR {
     }
 
     try {
-      // Apply and validate config BEFORE setting _initialized
-      this._applyConfig(config);
-
-      const sampled = shouldEnableSample({
+      this._samplingDecision ??= shouldEnableSample({
         rate: config?.samplingRate ?? DEFAULTS.SAMPLING_RATE,
-        storageKey: config?.samplingStorageKey ?? DEFAULTS.SAMPLING_STORAGE_KEY,
-        clientId: config?.clientId ?? null,
+        samplingFn: config?.samplingFn,
       });
 
-      if (!sampled) {
+      if (!this._samplingDecision) {
         return false;
       }
 
+      // Apply and validate config BEFORE setting _initialized
+      this._applyConfig(config);
       this._initialized = true;
       this._pageLoadTime = nowMs();
       actions.init(config?.actionsBufferMaxSize, config?.actionsTrackedEvents);
@@ -462,6 +462,7 @@ export type {
   EnvSnapshot,
   Enricher,
   EnricherLimitsConfig,
+  SamplingFn,
 } from './types';
 
 export { hashText, makeRpcRequestKey, makeHttpRequestKey } from '../shared/hash';

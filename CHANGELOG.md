@@ -2,13 +2,25 @@
 
 ## 1.0.0
 
+### Added
+
+- **[rdr/rt]** Added `samplingFn(samplingRate): boolean` and the public `SamplingFn` type to replace random sampling with a synchronous consumer-defined decision, including at rates 0 and 1.
+
 ### Changed
 
+- **[rdr/rt] BREAKING** Changed the default `samplingRate` from `0.05` (5%) to `1` (100%), enabling collection on every page load unless sampling is configured explicitly.
+- **[rdr/rt] BREAKING** Replaced persistent client-ID sampling with `Math.random() < samplingRate` on the first initialization of each module per page load.
+- **[rdr/rt]** Retained both accepted and rejected sampling decisions in memory across repeated initialization, SPA navigation, and `destroy()`/`init`, with independent decisions for RDR and RT.
+- **[rdr/rt]** Disabled collection for invalid rates, thrown sampling callbacks, or non-boolean callback results without falling back to random sampling.
 - **[package]** Added granular sub-path exports: `cosmic-eye/rdr`, `cosmic-eye/rt`, `cosmic-eye/extensions`.
 - **[package]** Existing main entry point exports, including `observeHistory`, `mobxSpy`, and their types, remain supported. Sub-path imports are optional and share the same module instances.
 - **[build]** Enabled code splitting (`splitting: true`) — shared code is extracted into chunks, no duplication across entry points.
 - **[build]** Extensions barrel (`src/extensions/index.ts`) no longer includes React-dependent `RouteRenderObserver`; it remains in `cosmic-eye/react`.
 - **[docs]** Documented optional sub-path imports and backward compatibility with existing imports.
+
+### Removed
+
+- **[rdr/rt] BREAKING** Removed `clientId` and `samplingStorageKey` from initialization options and stopped reading or writing sampling IDs in storage, leaving existing stored values untouched.
 
 ### Compatibility
 
@@ -17,6 +29,34 @@ No import changes are required when upgrading from 0.6.0. Existing imports conti
 ```ts
 import { initRDR, observeHistory, mobxSpy } from 'cosmic-eye';
 ```
+
+### Migration
+
+If you previously omitted `samplingRate`, set it explicitly to retain a 5% target; the default is now 100%:
+
+```ts
+initRDR({ samplingRate: 0.05 });
+initRT({ samplingRate: 0.05 });
+```
+
+The built-in target now applies to page loads rather than persistent clients. Both sampling outcomes are retained until a full page reload; changing sampling options or calling `destroy()` does not create another attempt.
+
+Remove `clientId` and `samplingStorageKey` from your config. If you need the old stable-ID selection, provide it through `samplingFn`:
+
+```ts
+import { hashText, initRDR, initRT, type SamplingFn } from 'cosmic-eye';
+
+const userId = 'user-123'; // Use the same ID as before to preserve the cohort.
+const samplingFn: SamplingFn = (rate) => {
+  const bucket = (parseInt(hashText(userId), 16) % 10_000) / 10_000;
+  return bucket < rate;
+};
+
+initRDR({ samplingRate: 0.15, samplingFn });
+initRT({ samplingRate: 0.15, samplingFn });
+```
+
+For storage-based sampling, read or generate the ID in your own callback using your previous storage key. `samplingFn` must be synchronous; only `true` enables collection, and thrown errors or non-boolean results disable it. The function receives the rate even at 0 or 1 and replaces random sampling entirely. Invalid rates disable collection without invoking the callback. The custom function is responsible for the selected proportion.
 
 ## 0.6.0
 

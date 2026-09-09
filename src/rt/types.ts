@@ -1,7 +1,7 @@
-import type { Enricher, EnricherLimitsConfig } from '../shared/types';
+import type { Enricher, EnricherLimitsConfig, SamplingFn } from '../shared/types';
 
 // Re-export shared types used by consumers
-export type { Enricher, EnricherLimitsConfig } from '../shared/types';
+export type { Enricher, EnricherLimitsConfig, SamplingFn } from '../shared/types';
 
 /** Internal transition state tracked by the RT module. */
 export interface Transition {
@@ -45,12 +45,10 @@ export type RtSendFn = (payload: RtEventPayload) => void;
 
 /** RT initialization config. */
 export interface RtConfig {
-  /** Sampling rate (0..1). 1 = always enabled. Default: 0.05. */
+  /** Page-load sampling rate (0..1). Default: 1. Passed to samplingFn when provided. */
   samplingRate?: number;
-  /** localStorage key for persisting client ID. Default: 'rum_rt_id'. */
-  samplingStorageKey?: string;
-  /** Explicit client ID for sampling. Overrides localStorage. */
-  clientId?: string;
+  /** Sync override, called once per page load even at rates 0/1. Throws disable collection. */
+  samplingFn?: SamplingFn;
   /** Critical timeout in ms. Default: 20000. */
   criticalTimeoutMs?: number;
   /** Idle timeout in ms. Default: 1500. */

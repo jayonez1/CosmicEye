@@ -21,6 +21,8 @@ class RT {
   private _currentTransition: Transition | null = null;
   private _criticalTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private _initialized = false;
+  // Sampling survives destroy/init; a full page reload creates a fresh module instance.
+  private _samplingDecision: boolean | undefined;
 
   // Config-derived fields (set during init)
   private _criticalTimeoutMs: number = DEFAULTS.CRITICAL_TIMEOUT_MS;
@@ -40,19 +42,17 @@ class RT {
     }
 
     try {
-      // Apply config BEFORE setting _initialized
-      this._applyConfig(config);
-
-      const sampled = shouldEnableSample({
+      this._samplingDecision ??= shouldEnableSample({
         rate: config?.samplingRate ?? DEFAULTS.SAMPLING_RATE,
-        storageKey: config?.samplingStorageKey ?? DEFAULTS.SAMPLING_STORAGE_KEY,
-        clientId: config?.clientId ?? null,
+        samplingFn: config?.samplingFn,
       });
 
-      if (!sampled) {
+      if (!this._samplingDecision) {
         return false;
       }
 
+      // Apply config BEFORE setting _initialized
+      this._applyConfig(config);
       this._initialized = true;
 
       return true;
@@ -393,4 +393,5 @@ export type {
   RtDestroyResult,
   Enricher,
   EnricherLimitsConfig,
+  SamplingFn,
 } from './types';
