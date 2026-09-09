@@ -48,16 +48,17 @@ const result = rdr.reqHandlerHttp({
 });
 ```
 
-All public methods return **result objects** with an `initialized` field. If RDR is not initialized, no work is done and `initialized: false` is returned.
+Except for `init()` and `isInitialized()`, which return booleans, public methods return **result objects** with an `initialized` field. If RDR is not initialized, no work is done and `initialized: false` is returned.
 
 ### Step 4: Handle SPA route changes (recommended)
+
+Use the history instance connected to your router, as in the [complete React Router v5 example](../../README.md#rt--observehistory--routerenderobserver).
 
 ```ts
 import { rdr } from 'cosmic-eye';
 import { observeHistory } from 'cosmic-eye/extensions';
-import { createBrowserHistory } from 'history';
+import { history } from './metrics';
 
-const history = createBrowserHistory();
 const observer = observeHistory(history);
 
 observer.subscribe(() => {
@@ -82,6 +83,8 @@ rdr.destroy();
 
 `destroy()` stops collection but retains the sampling decision. A subsequent `init` can restart an accepted module; a rejected module stays disabled until a full page reload.
 
+Configuration, including `send` and `tag`, is also retained. After `destroy()`, `init(config)` updates supplied settings and keeps omitted ones. Calling `init()` while active ignores new configuration.
+
 ---
 
 ## API Reference
@@ -101,7 +104,7 @@ rdr.destroy();
 
 ## Configuration — `RdrConfig`
 
-All fields are optional. Defaults are applied for omitted fields.
+All fields are optional. Defaults apply on first initialization; after `destroy()`, omitted fields keep their previous values.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -121,6 +124,8 @@ All fields are optional. Defaults are applied for omitted fields.
 | `chromeExtensionEvents` | `boolean` | `false` | Dispatch `CustomEvent('rdr', ...)` for Chrome extension. |
 | `actionsBufferMaxSize` | `number` | `3` | User action buffer size. |
 | `actionsTrackedEvents` | `string[]` | `['click', 'keydown', 'touchstart']` | DOM events tracked. |
+
+`send` may return a Promise, but RDR does not await it, handle its rejection, or retry delivery. The consumer is responsible for handling asynchronous delivery errors. Synchronous exceptions thrown by `send` are caught by the library's existing `try/catch`. `flush().flushed` reports a drained buffer, not confirmed delivery.
 
 ### Sampling
 
@@ -187,29 +192,42 @@ Each getter is called synchronously. If it throws, the entry is `{ error: 'enric
 
 ### Cookbook: HTTP fetch wrapper
 
+For small text/JSON request bodies. This handles string URLs, `URL`, and `Request`, including `init` overrides. It reads a copy of the body without waiting before starting the actual fetch, so body reading can shift the time recorded by RDR. Avoid this wrapper for large or streaming uploads; call `reqHandlerHttp` with known request data at the API-client layer instead.
+
 ```ts
 import { rdr } from 'cosmic-eye';
 
-const originalFetch = window.fetch;
-window.fetch = async (input, init) => {
-  const url = typeof input === 'string' ? input : input.url;
-  const method = init?.method || 'GET';
-  const body = typeof init?.body === 'string' ? init.body : '';
-
-  rdr.reqHandlerHttp({ httpMethod: method, endpoint: url, bodyText: body });
-
+const originalFetch = window.fetch.bind(window);
+window.fetch = (input, init) => {
+  try {
+    // Do not read a shared upload stream or binary/form body from init.
+    const body = init?.body;
+    if (body == null || typeof body === 'string' || body instanceof URLSearchParams) {
+      const snapshot = new Request(input instanceof Request ? input.clone() : input, init);
+      void snapshot.text().then((bodyText) => {
+        rdr.reqHandlerHttp({
+          httpMethod: snapshot.method,
+          endpoint: snapshot.url,
+          bodyText,
+        });
+      }).catch(() => {});
+    }
+  } catch {
+    // Failure to capture a metric must not prevent the original request.
+  }
   return originalFetch(input, init);
 };
 ```
 
+The original fetch Promise, response, and request errors are preserved. Unsupported bodies supplied through `init` are skipped. If `send` uses fetch, exclude the analytics endpoint from this wrapper to avoid collecting its own traffic.
+
 ### Cookbook: Manual flush + reset timing on pathname change
 
 ```ts
-import { createBrowserHistory } from 'history';
+import { history } from './metrics'; // The same instance passed to the router.
 import { initRDR, rdr } from 'cosmic-eye';
 import { observeHistory } from 'cosmic-eye/extensions';
 
-const history = createBrowserHistory();
 const observer = observeHistory(history);
 let prevPathname: string | null = null;
 

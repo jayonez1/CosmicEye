@@ -238,7 +238,9 @@ describe('RT.trackCritical', () => {
     rt.startTransition('/home');
 
     let resolvePromise: () => void;
-    const promise = new Promise<void>((r) => { resolvePromise = r; });
+    const promise = new Promise<void>((r) => {
+      resolvePromise = r;
+    });
 
     const result = rt.trackCritical(promise);
     expect(result.tracked).toBe(true);
@@ -362,9 +364,11 @@ describe('RT send function', () => {
     vi.advanceTimersByTime(200);
 
     expect(sendFn).toHaveBeenCalledTimes(1);
-    expect(consoleSpy.mock.calls.find(
-      (c: unknown[]) => typeof c[0] === 'string' && (c[0] as string).includes('CosmicEye: RT'),
-    )).toBeUndefined();
+    expect(
+      consoleSpy.mock.calls.find(
+        (c: unknown[]) => typeof c[0] === 'string' && (c[0] as string).includes('CosmicEye: RT'),
+      ),
+    ).toBeUndefined();
   });
 
   it('falls back to console.log when send not provided', () => {

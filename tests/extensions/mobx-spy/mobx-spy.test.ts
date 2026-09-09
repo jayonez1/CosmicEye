@@ -70,13 +70,19 @@ describe('mobxSpy', () => {
       let listener: ((event: unknown) => void) | null = null;
       const fakeSpy = (fn: (event: unknown) => void) => {
         listener = fn;
-        return () => { listener = null; };
+        return () => {
+          listener = null;
+        };
       };
 
       mobxSpy.init({ spy: fakeSpy });
 
       // Simulate MobX action event
-      listener!({ type: 'action', name: 'fetchUsers', object: { constructor: { name: 'UserStore' } } });
+      listener!({
+        type: 'action',
+        name: 'fetchUsers',
+        object: { constructor: { name: 'UserStore' } },
+      });
 
       const snap = mobxSpy.snapshot(1000);
       expect(snap.lastAction).not.toBeNull();
@@ -88,7 +94,9 @@ describe('mobxSpy', () => {
       let listener: ((event: unknown) => void) | null = null;
       const fakeSpy = (fn: (event: unknown) => void) => {
         listener = fn;
-        return () => { listener = null; };
+        return () => {
+          listener = null;
+        };
       };
 
       mobxSpy.init({ spy: fakeSpy });
@@ -104,7 +112,9 @@ describe('mobxSpy', () => {
       let listener: ((event: unknown) => void) | null = null;
       const fakeSpy = (fn: (event: unknown) => void) => {
         listener = fn;
-        return () => { listener = null; };
+        return () => {
+          listener = null;
+        };
       };
 
       mobxSpy.init({ spy: fakeSpy, trackedTypes: ['action'] });
@@ -121,7 +131,9 @@ describe('mobxSpy', () => {
       let listener: ((event: unknown) => void) | null = null;
       const fakeSpy = (fn: (event: unknown) => void) => {
         listener = fn;
-        return () => { listener = null; };
+        return () => {
+          listener = null;
+        };
       };
 
       mobxSpy.init({ spy: fakeSpy, bufferMaxSize: 2 });
@@ -139,7 +151,9 @@ describe('mobxSpy', () => {
       let listener: ((event: unknown) => void) | null = null;
       const fakeSpy = (fn: (event: unknown) => void) => {
         listener = fn;
-        return () => { listener = null; };
+        return () => {
+          listener = null;
+        };
       };
 
       mobxSpy.init({ spy: fakeSpy });

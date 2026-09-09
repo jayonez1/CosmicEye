@@ -22,12 +22,15 @@ npm install cosmic-eye
 
 ### Step 2: Initialize + observer
 
+This example uses React Router DOM 5.1+ (v5) and `history@4`. Use the same history instance in the router and observer; install `history@4` as a direct dependency if needed.
+
 ```ts
+// metrics.ts — import before rendering the application
 import { initRT, rt } from 'cosmic-eye';
 import { observeHistory } from 'cosmic-eye/extensions';
 import { createBrowserHistory } from 'history';
 
-const history = createBrowserHistory();
+export const history = createBrowserHistory();
 
 const ok = initRT({
   samplingRate: 1,
@@ -47,31 +50,47 @@ observer.subscribe(({ pathname, search }) => {
 
 ### Step 3: Connect RouteRenderObserver (post-render)
 
+RT measures the initial route and changes of `pathname`. Repeated `startTransition()` calls with the same pathname return `{ initialized: true, started: false }`, whether the previous measurement is pending, completed, or timed out. Query-only navigation preserves that measurement and its original `search`, and does not start a timeout. `observeHistory` still emits every navigation event. Calling `abortPending()`, or `destroy()` followed by `init()`, clears the transition and allows the same pathname to be measured again.
+
 ```tsx
+// App.tsx
+import { Router } from 'react-router-dom';
 import { RouteRenderObserver } from 'cosmic-eye/react';
 import { rt } from 'cosmic-eye';
+import { history } from './metrics';
 
-<RouteRenderObserver
-  onRouteChange={[(pathname) => { rt.markRendered(pathname); }]}
->
-  {children}
-</RouteRenderObserver>
+<Router history={history}>
+  <RouteRenderObserver
+    onRouteChange={[(pathname) => { rt.markRendered(pathname); }]}
+  >
+    {children}
+  </RouteRenderObserver>
+</Router>
 ```
+
+`children` is your route tree. Mount this router once at the application root. Other router versions need their own navigation integration; the `Router history` API above is specific to v5.
 
 ### Step 4: Track critical operations (optional)
 
 ```ts
-import { trackCritical } from 'cosmic-eye';
+import { rt } from 'cosmic-eye';
 
 // Option 1: with Promise
-const result = rt.trackCritical(fetchData());
+const request = fetchData();
+const result = rt.trackCritical(request);
 // result: { initialized, tracked }
+await request; // Handle request errors in the application's normal error flow.
 
 // Option 2: manual control
 const { done } = rt.trackCritical();
-await fetchData();
-done!();
+try {
+  await fetchData();
+} finally {
+  done?.();
+}
 ```
+
+Promise fulfillment and rejection both finish the critical operation. RT handles rejection of its own internal Promise chain; the application still receives and handles the original request rejection.
 
 ### Step 5: Abort pending transition (optional)
 
@@ -88,6 +107,8 @@ rt.destroy();
 // returns { initialized: false, destroyed: true }
 ```
 
+`destroy()` retains configuration, including `send`, `tag`, and the sampling decision. After `destroy()`, `init(config)` updates supplied settings and keeps omitted ones. Calling `init()` while active ignores new configuration.
+
 ---
 
 ## API Reference
@@ -96,19 +117,19 @@ rt.destroy();
 |--------|---------|-------------|
 | `init(config?)` | `boolean` | Initialize with optional config. Returns `true` if active. |
 | `isInitialized()` | `boolean` | Check if RT is currently active. |
-| `startTransition(pathname, search?)` | `RtStartTransitionResult` | Start tracking a route transition. |
+| `startTransition(pathname, search?)` | `RtStartTransitionResult` | Start tracking the initial route or a different pathname; the same pathname returns `started: false`. |
 | `markRendered(pathname)` | `RtMarkRenderedResult` | Mark render completion for matching pathname. |
 | `trackCritical(promise?)` | `RtTrackCriticalResult` | Track a critical operation. Returns `done` for manual mode. |
 | `abortPending(reason?)` | `RtAbortPendingResult` | Abort current transition and send abort event. |
 | `destroy()` | `RtDestroyResult` | Clear state and timers. |
 
-All public methods return **result objects** with an `initialized` field.
+Except for `init()` and `isInitialized()`, which return booleans, public methods return **result objects** with an `initialized` field.
 
 ---
 
 ## Configuration — `RtConfig`
 
-All fields are optional. Defaults are applied for omitted fields.
+All fields are optional. Defaults apply on first initialization; after `destroy()`, omitted fields keep their previous values.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -124,6 +145,8 @@ All fields are optional. Defaults are applied for omitted fields.
 | `enricherLimits` | `Partial<EnricherLimitsConfig>` | — | Limits for enricher output. |
 | `tag` | `string` | — | Custom tag added to every log entry. |
 | `chromeExtensionEvents` | `boolean` | `false` | Dispatch `CustomEvent('rt', ...)` for Chrome extension. |
+
+`send` may return a Promise, but RT does not await it, handle its rejection, or retry delivery. The consumer is responsible for handling asynchronous delivery errors. Synchronous exceptions thrown by `send` are caught by the library's existing `try/catch`.
 
 ### Sampling
 

@@ -71,6 +71,12 @@ class RT {
     }
 
     try {
+      // RouteRenderObserver reports pathname changes, so query-only navigation
+      // must not replace an active or completed measurement for the same path.
+      if (this._currentTransition?.pathname === pathname) {
+        return { initialized: true, started: false };
+      }
+
       if (this._currentTransition && !this._currentTransition.sent) {
         this._currentTransition.aborted = true;
       }
@@ -157,7 +163,7 @@ class RT {
     };
 
     if (promise && typeof promise.finally === 'function') {
-      promise.finally(done);
+      void promise.finally(done).catch(() => {});
 
       return { initialized: true, tracked: true };
     }
@@ -316,12 +322,14 @@ class RT {
       ver: VERSION,
       id: transition.id,
       routeName: transition.routeName,
-      routeRenderMs: transition.renderedAt !== null
-        ? Math.round(transition.renderedAt - transition.startAt)
-        : null,
-      routeTtiMs: transition.interactiveAt !== null
-        ? Math.round(transition.interactiveAt - transition.startAt)
-        : null,
+      routeRenderMs:
+        transition.renderedAt !== null
+          ? Math.round(transition.renderedAt - transition.startAt)
+          : null,
+      routeTtiMs:
+        transition.interactiveAt !== null
+          ? Math.round(transition.interactiveAt - transition.startAt)
+          : null,
     };
 
     if (this._includePathname) {

@@ -34,6 +34,8 @@ import { RouteRenderObserver } from 'cosmic-eye/react';
 
 ## Integration example
 
+This standalone example reports committed pathname changes. For RT timing, use the [complete integration example](../../../README.md#rt--observehistory--routerenderobserver): `observeHistory` and the router must share the same history instance. A separate history created alongside `BrowserRouter` will not observe its navigation.
+
 ```tsx
 import { RouteRenderObserver } from 'cosmic-eye/react';
 import { BrowserRouter } from 'react-router-dom';
@@ -52,4 +54,4 @@ import { BrowserRouter } from 'react-router-dom';
 ## Requirements
 
 - `react` >= 16.8.0 (hooks)
-- `react-router-dom` >= 5.0.0 (`useLocation`)
+- `react-router-dom` >= 5.1.0 (`useLocation`)

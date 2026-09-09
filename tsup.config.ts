@@ -9,6 +9,7 @@ export default defineConfig({
     extensions: 'src/extensions/index.ts',
   },
   format: ['esm'],
+  target: 'es2020',
   dts: true,
   sourcemap: false,
   clean: true,

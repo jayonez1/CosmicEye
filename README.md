@@ -33,6 +33,12 @@ The `rdr` and `rt` objects are default exports from their sub-paths and named ex
 npm install cosmic-eye
 ```
 
+The published package targets ES2020 and supports consumer projects using Node.js 14 or newer. It is ESM-only. The React entry point requires React >= 16.8 and React Router DOM >= 5.1; the core entry points do not require React. MobX is supplied by the application through `mobxSpy.init({ spy })`.
+
+Consumer installation, browser bundling, and runtime integration were verified on Node.js 14.21.3 with React / React DOM 17.0.2, React Router DOM 5.2.0, MobX 6.3.12, and mobx-react 7.2.1. The full stack's declarations were checked with TypeScript 4.7.4.
+
+Development of this repository (dependency installation, tests, linting, and builds) uses Node.js 20. These development tools are not installed with the published package.
+
 ## Chrome DevTools Extension
 
 - [CosmicEye Chrome Extension](https://github.com/jayonez1/CosmicEye-chrome-extension) — companion DevTools panel for real-time RDR/RT monitoring.
@@ -54,12 +60,15 @@ rdr.reqHandlerHttp({ httpMethod: 'GET', endpoint: '/api/users/42' });
 
 ### RT + observeHistory + RouteRenderObserver
 
+This example uses React Router DOM 5.1+ (v5) with `history@4`. The router and `observeHistory` must use the same history instance. Install `history@4` as a direct dependency if needed.
+
 ```ts
+// metrics.ts — import before rendering the application
 import { initRT, rt } from 'cosmic-eye';
 import { observeHistory } from 'cosmic-eye/extensions';
 import { createBrowserHistory } from 'history';
 
-const history = createBrowserHistory();
+export const history = createBrowserHistory();
 initRT({ send: (p) => analytics.send('rt', p), includePathname: true });
 
 const observer = observeHistory(history);
@@ -69,14 +78,28 @@ observer.subscribe(({ pathname, search }) => {
 ```
 
 ```tsx
+// App.tsx
+import { Router } from 'react-router-dom';
 import { RouteRenderObserver } from 'cosmic-eye/react';
+import { rt } from 'cosmic-eye';
+import { history } from './metrics';
 
-<RouteRenderObserver
-  onRouteChange={[(pathname) => { rt.markRendered(pathname); }]}
->
-  {children}
-</RouteRenderObserver>
+<Router history={history}>
+  <RouteRenderObserver
+    onRouteChange={[(pathname) => { rt.markRendered(pathname); }]}
+  >
+    {children}
+  </RouteRenderObserver>
+</Router>
 ```
+
+`children` is your application's route tree. Mount this router once at the application root. For other router versions, use their navigation integration to call `rt.startTransition()` before render; the v5 `Router history` API above is version-specific.
+
+### Sending metrics and reinitialization
+
+RDR and RT do not await, retry, or handle rejections of Promises returned by `send`. The consumer is responsible for handling asynchronous delivery errors, including reporting them when needed. Synchronous exceptions thrown by `send` are caught by the library's existing `try/catch`.
+
+`destroy()` stops collection but retains configuration, including `send`, `tag`, and the sampling decision. After `destroy()`, `init(config)` updates supplied settings and keeps omitted ones; `init()` on an active module ignores new configuration. Sampling options are always retained for the page load.
 
 ## How duplicate detection works
 
@@ -91,13 +114,15 @@ import { RouteRenderObserver } from 'cosmic-eye/react';
 
 ## How route transition tracking works
 
-1. On navigation, call `startTransition(pathname, search?)` — RT creates a transition ID, stores the start time, and normalizes `routeName`.
+1. On initial navigation or a change of `pathname`, call `startTransition(pathname, search?)` — RT creates a transition ID, stores the start time, and normalizes `routeName`. Calls with the same pathname return `started: false`, including query-only navigation, and preserve the existing measurement.
 2. After route commit, call `markRendered(pathname)` — RT records render completion time.
 3. If there is critical async work, use `trackCritical()` — RT waits until all critical tasks are finished.
 4. RT marks the transition as interactive after `rafCount` frames + idle wait (`idleTimeoutMs`), then sends a `transition` event.
 5. The event includes `routeRenderMs` and `routeTtiMs` (and optional `pathname` / `search` if enabled in config).
 6. If interactive state is not reached before `criticalTimeoutMs` (default 20 s), RT still sends the event with `timedOut: true`.
 7. `abortPending(reason?)` sends an `abort` event; `destroy()` stops tracking and clears timers.
+
+Query changes do not produce separate RT measurements. The optional `search` field describes the URL at the start of a measured pathname transition. After `abortPending()` clears a transition, or after `destroy()`/`init`, the same pathname can be measured again.
 
 
 ## Sampling

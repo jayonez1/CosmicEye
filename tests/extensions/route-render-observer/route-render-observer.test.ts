@@ -98,7 +98,9 @@ describe('RouteRenderObserver', () => {
   });
 
   it('catches errors in callbacks without breaking other listeners', () => {
-    const failing = vi.fn(() => { throw new Error('boom'); });
+    const failing = vi.fn(() => {
+      throw new Error('boom');
+    });
     const succeeding = vi.fn();
 
     render(

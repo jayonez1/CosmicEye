@@ -4,6 +4,8 @@ Lightweight MobX spy integration for CosmicEye. Tracks MobX actions and reaction
 
 `mobxSpy` does not import `mobx` automatically. Pass `spy` explicitly via `init({ spy })`.
 
+In [MobX production builds](https://mobx.js.org/analyzing-reactivity.html#spy), `spy` is disabled. The extension receives no events, so snapshots contain `lastAction: null` and `lastReaction: null`. RDR and RT still collect their own metrics; MobX action/reaction context is unavailable.
+
 ## Quick Start
 
 ```ts

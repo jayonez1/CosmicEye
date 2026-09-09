@@ -12,4 +12,9 @@ export type {
 } from './history-route-observer';
 
 export { mobxSpy } from './mobx-spy';
-export type { MobxSpySnapshot, MobxSpyConfig, MobxActionEntry, MobxReactionEntry } from './mobx-spy';
+export type {
+  MobxSpySnapshot,
+  MobxSpyConfig,
+  MobxActionEntry,
+  MobxReactionEntry,
+} from './mobx-spy';

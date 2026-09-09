@@ -6,7 +6,9 @@ let initRDR: typeof import('../../src/rdr/index').initRDR;
 let consoleSpy: MockInstance;
 
 beforeEach(async () => {
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'] });
+  vi.useFakeTimers({
+    toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance'],
+  });
   consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
   vi.resetModules();
@@ -311,7 +313,12 @@ describe('RDR enrichers', () => {
     initRDR({
       send: sendFn,
       enrichers: [
-        { name: 'broken', get: () => { throw new Error('boom'); } },
+        {
+          name: 'broken',
+          get: () => {
+            throw new Error('boom');
+          },
+        },
         { name: 'ok', get: () => 42 },
       ],
     });

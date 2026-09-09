@@ -19,7 +19,11 @@ const parseLocation = (
 ): { pathname: string; search: string } => {
   if (typeof pathOrLocation === 'string') {
     try {
-      const url = new URL(pathOrLocation, 'http://localhost');
+      // Query/hash-only navigation keeps the current pathname.
+      const base = /^[?#]/.test(pathOrLocation)
+        ? new URL(fallbackPathname, 'http://localhost')
+        : 'http://localhost';
+      const url = new URL(pathOrLocation, base);
       return { pathname: url.pathname, search: url.search };
     } catch {
       return { pathname: pathOrLocation, search: '' };

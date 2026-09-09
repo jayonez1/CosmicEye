@@ -354,7 +354,9 @@ describe('observeHistory', () => {
       const observer = observeHistory(history);
       const events: NavigationEvent[] = [];
 
-      observer.subscribe(() => { throw new Error('boom'); });
+      observer.subscribe(() => {
+        throw new Error('boom');
+      });
       observer.subscribe((e) => events.push(e));
       events.length = 0;
 

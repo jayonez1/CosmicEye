@@ -18,6 +18,17 @@
 - **[build]** Extensions barrel (`src/extensions/index.ts`) no longer includes React-dependent `RouteRenderObserver`; it remains in `cosmic-eye/react`.
 - **[docs]** Documented optional sub-path imports and backward compatibility with existing imports.
 
+### Fixed
+
+- **[docs]** Corrected fetch and router integration examples and ensured manual critical-operation cleanup runs when a request fails.
+- **[docs]** Clarified configuration retention across `destroy()`/`init`, the consumer's responsibility for asynchronous `send` errors, and the absence of MobX spy events in production builds.
+- **[package]** Included module READMEs and the changelog in the npm archive so documentation and migration links resolve after installation.
+- **[rt]** Handled rejection of the internal `trackCritical()` Promise chain without changing the original request Promise.
+- **[rt]** Ignored repeated `startTransition()` calls for the same pathname, preserving pending or completed measurements and preventing false timeouts on query-only navigation.
+- **[extensions]** Preserved the current pathname when observing query-only or hash-only string navigation.
+- **[package]** Corrected the minimum React Router DOM peer version to 5.1.0, which provides `useLocation`.
+- **[build]** Set an explicit ES2020 output target for Node.js 14 consumer projects and synchronized development dependency versions with the lockfile.
+
 ### Removed
 
 - **[rdr/rt] BREAKING** Removed `clientId` and `samplingStorageKey` from initialization options and stopped reading or writing sampling IDs in storage, leaving existing stored values untouched.

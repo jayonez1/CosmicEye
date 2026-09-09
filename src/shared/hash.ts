@@ -256,9 +256,10 @@ export const makeHttpRequestKey = (
   const endpointWithMethod = `${method}:${endpoint}`;
   const endpointHash = hashText(endpointWithMethod);
 
-  const truncatedBody = bodyText.length > limits.MAX_STRING_CHARS
-    ? bodyText.slice(0, limits.MAX_STRING_CHARS)
-    : bodyText;
+  const truncatedBody =
+    bodyText.length > limits.MAX_STRING_CHARS
+      ? bodyText.slice(0, limits.MAX_STRING_CHARS)
+      : bodyText;
   const bodyHash = hashText(truncatedBody);
   const wasTruncated = bodyText.length > limits.MAX_STRING_CHARS;
 

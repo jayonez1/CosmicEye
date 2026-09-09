@@ -47,6 +47,8 @@ On the first `subscribe` call, an `INIT` event is emitted with the current locat
 
 ## Events
 
+Query-only and hash-only navigation still emit events. String inputs such as `?page=2` and `#details` retain the current pathname.
+
 | Action | When |
 |--------|------|
 | `INIT` | Once, on first `subscribe` call |
@@ -72,6 +74,8 @@ The observer detects the `listen` callback signature automatically:
 - **v5**: `callback({ location, action })`
 
 ## Example
+
+When integrating with a router, observe the history instance used by that router. See the [React Router v5 example](../../../README.md#rt--observehistory--routerenderobserver) for complete wiring.
 
 ```ts
 import { observeHistory } from 'cosmic-eye/extensions';
